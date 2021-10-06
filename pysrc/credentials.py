@@ -1,0 +1,8 @@
+project_id="natural-iridium-300411"
+bucket_name="my-deep-learning-example"
+ssh_username="tsubaki"
+ssh_private_key_name="ssh_private_key_id25519"
+mysql_user="root"
+mysql_password_name="gp_server_mysql_password"
+mysql_hostname="gp-server.ml"
+mysql_database="episode"

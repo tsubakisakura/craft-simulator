@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learner
+  labels:
+    app: learner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: learner
+  template:
+    metadata:
+      labels:
+        app: learner
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-spot: "true"
+      terminationGracePeriodSeconds: 25
+      containers:
+      - name: learner-runner
+        image: asia.gcr.io/natural-iridium-300411/craft-simulator
+        workingDir: /workdir
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            python -u pysrc/main.py learner --epochs 100 --buffer 80000
+        resources:
+          requests:
+            cpu: "2"
+        volumeMounts:
+        - name: google-cloud-key
+          mountPath: /var/secrets/google
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/key.json
+      volumes:
+      - name: google-cloud-key
+        secret:
+          secretName: storage-key

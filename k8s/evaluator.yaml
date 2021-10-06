@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evaluator
+  labels:
+    app: evaluator
+spec:
+  replicas: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: evaluator
+  template:
+    metadata:
+      labels:
+        app: evaluator
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-spot: "true"
+      terminationGracePeriodSeconds: 25
+      containers:
+      - name: evaluator-runner
+        image: asia.gcr.io/natural-iridium-300411/craft-simulator
+        workingDir: /workdir
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            python -u pysrc/main.py evaluator --plays-per-write 10 --thread-num 1 --mcts-simulation-num 1500
+        resources:
+          requests:
+            cpu: "1"
+        volumeMounts:
+        - name: google-cloud-key
+          mountPath: /var/secrets/google
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/key.json
+      volumes:
+      - name: google-cloud-key
+        secret:
+          secretName: storage-key
