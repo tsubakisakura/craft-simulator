@@ -5,14 +5,11 @@ import subprocess
 import tools
 from credentials import *
 
-def run_evaluator(args):
+def run_learner2(args):
     path = "target/release/craft-simulator"
     env = os.environ.copy()
     env["MYSQL_PASSWORD"]=tools.get_mysql_password()
-    cmdline = [path,"evaluator",
-        "--plays-per-write",str(args.plays_per_write),
-        "--thread-num",str(args.thread_num),
-        "--mcts-simulation-num",str(args.mcts_simulation_num),
+    cmdline = [path,"learner",
         "--mysql-user",mysql_user]
     if args.flamegraph:
         cmdline.append("--flamegraph")
@@ -23,5 +20,5 @@ def run_evaluator(args):
 
     return True
 
-def command_evaluator(args):
-    tools.with_ssh_tunnel( lambda: run_evaluator( args ) )
+def command_learner2(args):
+    tools.with_ssh_tunnel( lambda: run_learner2( args ) )

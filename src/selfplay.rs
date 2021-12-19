@@ -40,6 +40,8 @@ pub struct SelfPlayParameter {
     pub plays_per_write : usize,
     pub mysql_user : String,
     pub thread_num : u32,
+    pub tch_thread_num : u32,
+    pub tch_interop_thread_num : u32,
     pub batch_size : usize,
     pub writer_param : WriterParameter,
 }
@@ -62,7 +64,7 @@ pub struct Replay {
 struct ThreadContext {
     episode_param : EpisodeParameter,
     batch_size : usize,
-    selfplay_receiver : Receiver<(String,Arc<tensorflow::Graph>)>,
+    selfplay_receiver : Receiver<(String,Arc<tch::nn::VarStore>)>,
     writer_sender : Sender<Replay>,
 }
 
@@ -70,7 +72,7 @@ struct CoroutineContext {
     episode_param : EpisodeParameter,
     writer_sender : Sender<Replay>,
     predict_queue : PredictQueue,
-    graph_info : RefCell<(String,Arc<tensorflow::Graph>)>, // CellはCopy traitを要求します。StringもArcもCloneが無いのでRefCellが必要であるようです
+    graph_info : RefCell<(String,Arc<tch::nn::VarStore>)>, // CellはCopy traitを要求します。StringもArcもCloneが無いのでRefCellが必要であるようです
 }
 
 async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, predict_queue:&PredictQueue ) -> Replay {
@@ -163,7 +165,7 @@ fn selfplay_thread( ctx:ThreadContext ) {
 }
 
 // 戻り値の型は利用者側の都合でVecのタプルで返したほうが良いと思います
-fn spawn_selfplay_threads( episode_param:&EpisodeParameter, writer_sender:&Sender<Replay>, thread_num:u32, batch_size:usize ) -> (Vec<JoinHandle<()>>,Vec<Sender<(String,Arc<tensorflow::Graph>)>>) {
+fn spawn_selfplay_threads( episode_param:&EpisodeParameter, writer_sender:&Sender<Replay>, thread_num:u32, batch_size:usize ) -> (Vec<JoinHandle<()>>,Vec<Sender<(String,Arc<tch::nn::VarStore>)>>) {
     let mut handles = vec![];
     let mut senders = vec![];
     for thread_id in 0..thread_num {
@@ -246,7 +248,7 @@ fn run_simulation(param:&SelfPlayParameter ) {
     let writer_handle = std::thread::Builder::new().name("writer".to_string()).spawn( move || { write_thread( send_mysql_pool, send_param, writer_receiver ) } ).unwrap();
 
     // 以下、終了条件を満たすまで無限ループします
-    let mut graph_cache = GraphCache::new();
+    let mut graph_cache = WeightsCache::new();
     let mut ucb1_context = UCB1Context::new( mysql_pool.clone() );
 
     loop {
@@ -260,7 +262,7 @@ fn run_simulation(param:&SelfPlayParameter ) {
                 eprintln!("wait for ucb1 model...");
             },
             Ok(Some(graph_filename)) => {
-                let graph = graph_cache.load_graph(&graph_filename).unwrap();
+                let graph = graph_cache.load_weights(&graph_filename).unwrap();
                 for sender in &selfplay_senders {
                     sender.send((graph_filename.clone(), graph.clone())).unwrap()
                 }
@@ -284,5 +286,20 @@ fn run_simulation(param:&SelfPlayParameter ) {
 pub fn run(param:&SelfPlayParameter) {
 
     eprintln!("selfplay parameters:{:?}", param);
+
+    // 強制シングルスレッドの設定にします。
+    // 現状調査では1が最も高速らしいです。
+    //
+    // 以下推測も多く含みます。
+    // tch-rsには内部スレッドがあり、全スレッドからリクエストを送信していると思われます。
+    // 内部スレッドはデフォルトでインスタンスが保持するCPU数の分だけ勝手に割り当てられるようです。
+    // しかし、セルフプレイでは木の探索でもCPUを使います。
+    // デフォルトのCPU配分だとNNの推論にCPUを多く使いすぎていて、CPUの処理オーダーが想定から大きく外れてしまうようです。
+    //
+    // 内部スレッドを使いますので探索スレッドを回すCPUコア＋αだけCPUがあるほうが効率がよくなると思います。
+    // (多分推論中はスレッド待機してるんだと思うんだけど、推論が重ければ重いだけそういう傾向にはなると思う)
+    tch::set_num_threads( param.tch_thread_num as i32 );
+    tch::set_num_interop_threads( param.tch_interop_thread_num as i32 );
+
     run_simulation(param);
 }

@@ -6,10 +6,12 @@ mod selfplay;
 mod mcts;
 mod formatter;
 mod network;
+mod network2;
 mod writer;
 mod selector;
 mod gcs;
 mod cache;
+mod learner;
 mod benchmark;
 mod executor;
 mod predictor;
@@ -18,6 +20,7 @@ use logic::Setting;
 use argh::FromArgs;
 use selfplay::{WriterParameter,EpisodeParameter,SelfPlayParameter};
 use selector::Selector;
+use learner::{LearnerParameter};
 use benchmark::BenchmarkParameter;
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -32,6 +35,7 @@ struct TopLevel {
 enum SubCommand {
     Evaluator(SubCommandEvaluator),
     Generator(SubCommandGenerator),
+    Learner(SubCommandLearner),
     Benchmark(SubCommandBenchmark),
     Cui(SubCommandCui),
 }
@@ -56,6 +60,12 @@ struct SubCommandEvaluator {
 
     #[argh(option, description="use optimistic selector")]
     optimistic:Option<usize>,
+
+    #[argh(option, default="1", description="torch parallelism thread num")]
+    tch_thread_num:u32,
+
+    #[argh(option, default="1", description="torch interop thread num")]
+    tch_interop_thread_num:u32,
 
     #[argh(option, default="String::from(\"root\")", description="mysql user name")]
     mysql_user:String,
@@ -94,6 +104,22 @@ struct SubCommandGenerator {
     #[argh(option, description="use optimistic selector")]
     optimistic:Option<usize>,
 
+    #[argh(option, default="1", description="torch parallelism thread num")]
+    tch_thread_num:u32,
+
+    #[argh(option, default="1", description="torch interop thread num")]
+    tch_interop_thread_num:u32,
+
+    #[argh(option, default="String::from(\"root\")", description="mysql user name")]
+    mysql_user:String,
+
+    #[argh(switch, description="profile with flamegraph")]
+    flamegraph: bool,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name="learner", description="learning network")]
+struct SubCommandLearner {
     #[argh(option, default="String::from(\"root\")", description="mysql user name")]
     mysql_user:String,
 
@@ -166,6 +192,8 @@ fn cmd_evaluator( args:SubCommandEvaluator ) {
         plays_per_write:args.plays_per_write,
         thread_num:args.thread_num,
         batch_size:args.batch_size,
+        tch_thread_num:args.tch_thread_num,
+        tch_interop_thread_num:args.tch_interop_thread_num,
         mysql_user:args.mysql_user,
         writer_param:WriterParameter::Evaluation,
     };
@@ -191,6 +219,8 @@ fn cmd_generator( args:SubCommandGenerator ) {
         plays_per_write:args.plays_per_write,
         thread_num:args.thread_num,
         batch_size:args.batch_size,
+        tch_thread_num:args.tch_thread_num,
+        tch_interop_thread_num:args.tch_interop_thread_num,
         mysql_user:args.mysql_user,
         writer_param:WriterParameter::Generation,
     };
@@ -200,6 +230,19 @@ fn cmd_generator( args:SubCommandGenerator ) {
     }
     else {
         selfplay::run(&param);
+    }
+}
+
+fn cmd_learner( args:SubCommandLearner ) {
+    let param = LearnerParameter {
+        mysql_user:args.mysql_user,
+    };
+
+    if args.flamegraph {
+        with_flamegraph( ||{ learner::run(&param) } );
+    }
+    else {
+        learner::run(&param);
     }
 }
 
@@ -223,6 +266,7 @@ fn main() {
     match cmdline.sub_command {
         SubCommand::Evaluator(x) => cmd_evaluator(x),
         SubCommand::Generator(x) => cmd_generator(x),
+        SubCommand::Learner(x) => cmd_learner(x),
         SubCommand::Benchmark(x) => cmd_benchmark(x),
         SubCommand::Cui(x) => cmd_cui(x),
     }

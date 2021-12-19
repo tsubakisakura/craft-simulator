@@ -8,7 +8,6 @@ from credentials import *
 def run_generator(args):
     path = "target/release/craft-simulator"
     env = os.environ.copy()
-    env["LD_LIBRARY_PATH"]="/workdir/target/release/"
     env["MYSQL_PASSWORD"]=tools.get_mysql_password()
     cmdline = [path,"generator",
         "--plays-per-write",str(args.plays_per_write),

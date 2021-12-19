@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use super::mcts::ActionVector;
 use super::logic::{State,Setting};
-use super::network::Network;
+use super::network2::*;
 
 // 個々のNNが予測した結果を保存するための場所
 // PendingおよびReadyがそのまま入っています。実質Optionと一緒。
@@ -34,7 +34,7 @@ impl Future for PredictResult {
 
 // 予測システム
 pub struct Predictor {
-    networks : HashMap<String,Network>,
+    networks : HashMap<String,(tch::nn::VarStore,TchNetwork)>,
     tasks : Rc<RefCell<HashMap<String,Vec<(State,PredictResult)>>>>,
 }
 
@@ -48,9 +48,12 @@ impl Predictor {
         Predictor { networks : HashMap::new(), tasks:Rc::new(RefCell::new(HashMap::new())) }
     }
 
-    pub fn load_network(&mut self, name:String, graph:&tensorflow::Graph ) {
+    pub fn load_network(&mut self, name:String, source_vs:&tch::nn::VarStore ) {
         if !self.networks.contains_key(&name) {
-            self.networks.insert(name, Network::load_graph(graph).unwrap() );
+            let mut vs = tch::nn::VarStore::new(tch::Device::Cpu);
+            let net = TchNetwork::new(&vs.root());
+            vs.copy(source_vs).unwrap(); // ファイルから直接読んでも良いです。どうせ全体から見るとどちらも大差ない
+            self.networks.insert(name, (vs,net) );
         }
     }
 
@@ -62,7 +65,7 @@ impl Predictor {
             // ここで見つからない場合はロジックがおかしいので処理を見直します
             let network = self.networks.get(name).expect("not found network");
             let (source,results) : (Vec<State>, Vec<PredictResult>) = task_vec.iter().cloned().unzip();
-            let dest = network.predict_batch( &source, setting ).unwrap();
+            let dest = network.1.predict_batch( &source, setting ).unwrap();
 
             for (result,d) in results.iter().zip( dest.iter() ) {
                 result.res.set(Poll::Ready(*d))

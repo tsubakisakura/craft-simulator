@@ -17,12 +17,21 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN apt-get update \
  && apt-get install -y \
         libssl-dev \
+        wget \
+        unzip \
  && apt-get clean
 
 # rust で failed to run custom build command for `openssl-sys` が出るときにすること
 # https://qiita.com/nacika_ins/items/465e89a7b3fbeb373605
 ENV OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/
 ENV OPENSSL_INCLUDE_DIR=/usr/include/openssl
+
+# libtorchのインストール
+# cxx11-abiである必要があります。通常バージョンのほうだとリンク時にエラーした
+RUN wget -q https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.10.1%2Bcpu.zip \
+ && unzip libtorch-cxx11-abi-shared-with-deps-1.10.1+cpu.zip -d /usr/local \
+ && rm libtorch-cxx11-abi-shared-with-deps-1.10.1+cpu.zip
+ENV LIBTORCH /usr/local/libtorch
 
 # 依存ライブラリのビルド
 COPY ./Cargo.toml ./Cargo.lock ./
@@ -53,6 +62,11 @@ RUN pip install --upgrade pip \
         sshtunnel \
         google-cloud-secret-manager \
         google-cloud-storage
+
+ENV LIBTORCH=/usr/local/libtorch
+ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:/workdir/target/release/
+
+COPY --from=build /usr/local/libtorch/lib/*.so* /usr/local/libtorch/lib/
 COPY --from=build /workdir/target/release/build/tensorflow-sys-0d5122ccecfa2b3f/out/libtensorflow.so.2 ./target/release/
 COPY --from=build /workdir/target/release/build/tensorflow-sys-0d5122ccecfa2b3f/out/libtensorflow_framework.so.2 ./target/release/
 COPY --from=build /workdir/target/release/craft-simulator ./target/release/

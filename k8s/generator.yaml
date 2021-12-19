@@ -26,10 +26,10 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            python -u pysrc/main.py generator --plays-per-write 500 --thread-num 2 --mcts-simulation-num 1500
+            python -u pysrc/main.py generator --plays-per-write 500 --thread-num 4 --mcts-simulation-num 1500
         resources:
           requests:
-            cpu: "2"
+            cpu: "4.5"
         volumeMounts:
         - name: google-cloud-key
           mountPath: /var/secrets/google

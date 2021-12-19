@@ -25,6 +25,12 @@ def command_learner(args):
     print("done.", file=sys.stderr)
     learner.command_learner(args)
 
+def command_learner2(args):
+    print("loading modules...", file=sys.stderr)
+    learner = importlib.import_module('learner2')
+    print("done.", file=sys.stderr)
+    learner.command_learner2(args)
+
 def command_evaluator(args):
     print("loading modules...", file=sys.stderr)
     evaluator = importlib.import_module('evaluator')
@@ -78,6 +84,12 @@ def main():
     parser_learner.add_argument('--buffer', type=int, default=200000, help='replay buffer size.')
     parser_learner.add_argument('--epochs', type=int, default=100, help='epoch num.')
     parser_learner.set_defaults(handler=command_learner)
+
+    parser_learner2 = subparser.add_parser('learner2', help='Run learner mode(Rust ver).')
+    parser_learner2.add_argument('--buffer', type=int, default=200000, help='replay buffer size.')
+    parser_learner2.add_argument('--epochs', type=int, default=100, help='epoch num.')
+    parser_learner2.add_argument('--flamegraph', action='store_true', help='output flamegraph')
+    parser_learner2.set_defaults(handler=command_learner2)
 
     parser_generator = subparser.add_parser('generator', help='Run generator mode.')
     parser_generator.add_argument('--plays-per-write', type=int, default=100, help='plays per write.')
