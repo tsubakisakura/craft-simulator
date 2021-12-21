@@ -48,10 +48,6 @@ def main():
     # https://bugs.python.org/issue33109
     subparser = parser.add_subparsers()
 
-    parser_new = subparser.add_parser('new', help='create initial network.')
-    parser_new.add_argument('filename', help='output filename.')
-    parser_new.set_defaults(handler=command_new)
-
     parser_learner = subparser.add_parser('learner', help='Run learner mode.')
     parser_learner.add_argument('--buffer', type=int, default=200000, help='replay buffer size.')
     parser_learner.add_argument('--epochs', type=int, default=100, help='epoch num.')

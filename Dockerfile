@@ -64,11 +64,9 @@ RUN pip install --upgrade pip \
         google-cloud-storage
 
 ENV LIBTORCH=/usr/local/libtorch
-ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:/workdir/target/release/
+ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib
 
 COPY --from=build /usr/local/libtorch/lib/*.so* /usr/local/libtorch/lib/
-COPY --from=build /workdir/target/release/build/tensorflow-sys-0d5122ccecfa2b3f/out/libtensorflow.so.2 ./target/release/
-COPY --from=build /workdir/target/release/build/tensorflow-sys-0d5122ccecfa2b3f/out/libtensorflow_framework.so.2 ./target/release/
 COPY --from=build /workdir/target/release/craft-simulator ./target/release/
 COPY ./pysrc/ ./pysrc
 CMD ["/bin/bash"]
