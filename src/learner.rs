@@ -13,6 +13,7 @@ use super::network2::*;
 use super::logic::*;
 
 pub struct LearnerParameter {
+    pub epochs_per_write : usize,
     pub mysql_user : String,
 }
 
@@ -207,6 +208,6 @@ pub fn run( param:&LearnerParameter ) {
     let mut optimizer = adam_opt.build(&vs, 1e-3).unwrap();
 
     loop {
-        run_epoch_loop( &mysql_pool, &mut replay_buffer, &mut optimizer, &vs, &net, 100 );
+        run_epoch_loop( &mysql_pool, &mut replay_buffer, &mut optimizer, &vs, &net, param.epochs_per_write );
     }
 }

@@ -50,7 +50,7 @@ def main():
 
     parser_learner = subparser.add_parser('learner', help='Run learner mode.')
     parser_learner.add_argument('--buffer', type=int, default=200000, help='replay buffer size.')
-    parser_learner.add_argument('--epochs', type=int, default=100, help='epoch num.')
+    parser_learner.add_argument('--epochs-per-write', type=int, default=300, help='epoch num.')
     parser_learner.add_argument('--flamegraph', action='store_true', help='output flamegraph')
     parser_learner.set_defaults(handler=command_learner)
 

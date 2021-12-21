@@ -10,6 +10,7 @@ def run_learner(args):
     env = os.environ.copy()
     env["MYSQL_PASSWORD"]=tools.get_mysql_password()
     cmdline = [path,"learner",
+        "--epochs-per-write",str(args.epochs_per_write),
         "--mysql-user",mysql_user]
     if args.flamegraph:
         cmdline.append("--flamegraph")
