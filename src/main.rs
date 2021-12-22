@@ -123,6 +123,9 @@ struct SubCommandLearner {
     #[argh(option, default="300", description="epochs per write")]
     epochs_per_write:usize,
 
+    #[argh(option, default="40000", description="replay buffer size")]
+    replay_buffer_size:usize,
+
     #[argh(option, default="String::from(\"root\")", description="mysql user name")]
     mysql_user:String,
 
@@ -239,6 +242,7 @@ fn cmd_generator( args:SubCommandGenerator ) {
 fn cmd_learner( args:SubCommandLearner ) {
     let param = LearnerParameter {
         epochs_per_write:args.epochs_per_write,
+        replay_buffer_size:args.replay_buffer_size,
         mysql_user:args.mysql_user,
     };
 

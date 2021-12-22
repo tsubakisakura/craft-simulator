@@ -14,6 +14,7 @@ use super::logic::*;
 
 pub struct LearnerParameter {
     pub epochs_per_write : usize,
+    pub replay_buffer_size : usize,
     pub mysql_user : String,
 }
 
@@ -201,7 +202,7 @@ pub fn run( param:&LearnerParameter ) {
     let mysql_pool = Arc::new(Mutex::new(mysql_pool_base));
 
     // ここから学習のデータ構造作成
-    let mut replay_buffer = ReplayBuffer::new(40000);
+    let mut replay_buffer = ReplayBuffer::new(param.replay_buffer_size);
     let vs = nn::VarStore::new(Device::Cpu);
     let net = TchNetwork::new(&vs.root());
     let adam_opt = nn::Adam { wd:0.0001, ..nn::Adam::default() };

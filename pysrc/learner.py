@@ -11,6 +11,7 @@ def run_learner(args):
     env["MYSQL_PASSWORD"]=tools.get_mysql_password()
     cmdline = [path,"learner",
         "--epochs-per-write",str(args.epochs_per_write),
+        "--replay-buffer-size",str(args.replay_buffer_size),
         "--mysql-user",mysql_user]
     if args.flamegraph:
         cmdline.append("--flamegraph")
