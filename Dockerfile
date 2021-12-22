@@ -1,11 +1,18 @@
-# ビルドキャッシュ作成
-#
-# 元々rustの公式イメージを利用していましたが、
-# rust側がlibpython3.9でtensorflow側がlibpython3.8であり、
-# それぞれお互いに互換性のあるライブラリが置いてなかったので、
-# 実行環境であるtensorflowベースでRustのビルド環境を構築することにしました。
-FROM tensorflow/tensorflow:latest AS build
+###############################################################################
+# 共通の基本レイヤー
+###############################################################################
+FROM debian:11.2-slim as base
 WORKDIR /workdir
+
+RUN apt-get update \
+ && apt-get install -y \
+        curl \
+ && apt-get clean
+
+###############################################################################
+# ビルド用バイナリ
+###############################################################################
+FROM base as build
 
 # rustup を非対話的環境でインストールする方法
 # https://qiita.com/maguro_tuna/items/f69b2e41f753d2ff0cc2
@@ -16,6 +23,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN apt-get update \
  && apt-get install -y \
+        build-essential \
         libssl-dev \
         wget \
         unzip \
@@ -45,16 +53,17 @@ COPY ./src/ ./src
 RUN touch ./src/main.rs
 RUN cargo build --release
 
-# コンテナ作成
-#
-# alpineのシングルバイナリは使えませんでした(libtensorflowとかが静的にならなかったため)
-# debianの場合、Rustのほうはlibtensorflow.so等を持ってくれば動いたのですが、
-# python側の各種ライブラリのインストールに苦戦してしまったので最終的にtensorflow公式のイメージを使うことにしました。
-#
-# ただ、Rustのプログラムが参照するlibtensorflowに関しては、LD_LIBRARY_PATHを直接指定することにしています。
-# pythonでも別途参照するので競合しないようにするためです。
-FROM tensorflow/tensorflow:latest
-WORKDIR /workdir
+###############################################################################
+# 実行コンテナ作成
+###############################################################################
+FROM base
+
+RUN apt-get update \
+ && apt-get install -y \
+        python3 \
+        python3-pip \
+ && apt-get clean
+
 RUN pip install --upgrade pip \
  && pip install --no-cache-dir \
         ulid-py \

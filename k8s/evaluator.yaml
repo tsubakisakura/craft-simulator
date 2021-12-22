@@ -26,7 +26,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            python -u pysrc/main.py evaluator --plays-per-write 10 --thread-num 1 --mcts-simulation-num 1500
+            python3 -u pysrc/main.py evaluator --plays-per-write 10 --thread-num 1 --mcts-simulation-num 1500
         resources:
           requests:
             cpu: "1"

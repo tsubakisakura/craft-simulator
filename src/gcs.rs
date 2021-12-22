@@ -1,7 +1,7 @@
 use std::process::{Command, Stdio};
 
 pub fn download( source:&str, destination:&str ) -> Result<(),String> {
-    let ret = Command::new("python")
+    let ret = Command::new("python3")
     .args(["pysrc/main.py","download",source,destination])
     .stdin(Stdio::null())
     .stdout(Stdio::null())
@@ -16,7 +16,7 @@ pub fn download( source:&str, destination:&str ) -> Result<(),String> {
 }
 
 pub fn upload( source:&str, destination:&str, content_type:&str ) -> Result<(),String> {
-    let ret = Command::new("python")
+    let ret = Command::new("python3")
     .args(["pysrc/main.py","upload",source,destination,"--content-type",content_type])
     .stdin(Stdio::null())
     .stdout(Stdio::null())
