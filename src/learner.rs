@@ -1,5 +1,6 @@
 use std::io::{BufReader,BufRead};
 use std::sync::{Arc,Mutex};
+use std::time::{Instant};
 
 use bzip2::read::BzDecoder;
 use mysql::*;
@@ -148,11 +149,17 @@ fn add_samples_from_blobs( replay_buffer:&mut ReplayBuffer, blobs:&[String], rea
 fn train( optimizer:&mut Optimizer, net:&TchNetwork, replay_buffer:&ReplayBuffer, epoch_num:usize ) {
     eprintln!("train for replay buffer size: {}", replay_buffer.len());
 
+    let mut start = Instant::now();
+
     for epoch in 0..epoch_num {
         let (p,v) = net.forward_t(&replay_buffer.states,true);
         let (loss,p_loss,v_loss) = loss_alphazero(&p, &replay_buffer.policies, &v, &replay_buffer.values);
         optimizer.backward_step(&loss);
-        eprintln!( "epoch: {:4}, loss: {:8.5}, p_loss: {:8.5}, v_loss: {:8.5}", epoch, f64::from(&loss), f64::from(&p_loss), f64::from(&v_loss) );
+
+        let now = Instant::now();
+        let elapsed_time = now - start;
+        eprintln!( "epoch: {:4}, elapsed_time[msec]: {}, loss: {:8.5}, p_loss: {:8.5}, v_loss: {:8.5}", epoch, elapsed_time.as_millis(), f64::from(&loss), f64::from(&p_loss), f64::from(&v_loss) );
+        start = now;
     }
 }
 
