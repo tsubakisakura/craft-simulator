@@ -210,12 +210,24 @@ pub fn run( param:&LearnerParameter ) {
 
     // ここから学習のデータ構造作成
     let mut replay_buffer = ReplayBuffer::new(param.replay_buffer_size);
-    let vs = nn::VarStore::new(Device::Cpu);
-    let net = TchNetwork::new(&vs.root());
-    let adam_opt = nn::Adam { wd:0.0001, ..nn::Adam::default() };
-    let mut optimizer = adam_opt.build(&vs, 1e-3).unwrap();
 
     loop {
+        // 理由が分からないですが、このあたりをループの中に入れてあげると実行速度を維持できるので、現状このようにしています。
+        // なお影響力が大きいのがoptimizerです。optimizerを外に出すとめちゃくちゃ遅くなります。
+        // vsとかnetとかはそんなに影響ないようです。僅かに遅くなってはいるようですが。
+        // ↓↓↓ここまで
+        let mut vs = nn::VarStore::new(Device::Cpu);
+        let net = TchNetwork::new(&vs.root());
+
+        match std::path::Path::new("weights").exists() {
+            true => { vs.load("weights").unwrap(); eprintln!("load weights"); }
+            false => { eprintln!("cannot find path"); },
+        }
+
+        let adam_opt = nn::Adam { wd:0.0001, ..nn::Adam::default() };
+        let mut optimizer = adam_opt.build(&vs, 1e-3).unwrap();
+        // ↑↑↑ここまで
+
         run_epoch_loop( &mysql_pool, &mut replay_buffer, &mut optimizer, &vs, &net, param.epochs_per_write );
     }
 }
