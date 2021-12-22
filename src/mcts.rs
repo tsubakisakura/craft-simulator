@@ -126,7 +126,7 @@ pub fn get_reward(s:&State,setting:&Setting) -> f32 {
         let q = s.quality as f32 / setting.max_quality as f32;
 
         // ターンボーナス[0,1]
-        let b = lerp_clip(60.0,20.0,s.turn as f32) * lerp_clip(80000.0,81000.0,s.quality as f32);
+        let b = lerp_clip(60.0,20.0,s.turn as f32) * lerp_clip(81000.0,81400.0,s.quality as f32);
 
         // 結果はqとbを適当にマージして決めます
         t*q + (1.0-t)*b
