@@ -7,14 +7,25 @@ use super::logic::*;
 use super::network::{encode_state_batch,decode_pv_batch};
 use super::mcts::*;
 
+pub const STATE_NUM : usize = 36;
+const HIDDEN_NODES: i64 = 128;
+
+pub trait DualNetwork {
+
+    fn forward_t(&self, input: &Tensor, train:bool) -> (Tensor,Tensor);
+
+    fn predict_batch(&self, states:&[State], setting:&Setting) -> Result<Vec<(ActionVector,f32)>, Box<dyn Error>> {
+        let state_vec_t = encode_state_batch( states, setting );
+        let pv_t = self.forward_t(&state_vec_t, false);
+        Ok(decode_pv_batch(pv_t))
+    }
+}
+
 pub struct TchNetwork {
     main_net:SequentialT,
     policy_net:SequentialT,
     value_net:SequentialT,
 }
-
-pub const STATE_NUM : usize = 36;
-const HIDDEN_NODES: i64 = 128;
 
 fn create_main_network(vs: &nn::Path) -> SequentialT {
     nn::seq_t()
@@ -49,18 +60,14 @@ impl TchNetwork {
             value_net: create_value_network(vs),
         }
     }
+}
 
-    pub fn forward_t(&self, input: &Tensor, train:bool) -> (Tensor,Tensor) {
+impl DualNetwork for TchNetwork {
+    fn forward_t(&self, input: &Tensor, train:bool) -> (Tensor,Tensor) {
         let main_output = self.main_net.forward_t(input, train);
         let policy_output = self.policy_net.forward_t(&main_output, train);
         let value_output = self.value_net.forward_t(&main_output, train);
 
         (policy_output, value_output)
-    }
-
-    pub fn predict_batch(&self, states:&[State], setting:&Setting) -> Result<Vec<(ActionVector,f32)>, Box<dyn Error>> {
-        let state_vec_t = encode_state_batch( states, setting );
-        let pv_t = self.forward_t(&state_vec_t, false);
-        Ok(decode_pv_batch(pv_t))
     }
 }
