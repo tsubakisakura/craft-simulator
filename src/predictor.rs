@@ -34,7 +34,7 @@ impl Future for PredictResult {
 
 // 予測システム
 pub struct Predictor {
-    networks : HashMap<String,(tch::nn::VarStore,TchNetwork)>,
+    networks : HashMap<String,(tch::nn::VarStore,Box<dyn DualNetwork>)>,
     tasks : Rc<RefCell<HashMap<String,Vec<(State,PredictResult)>>>>,
 }
 
@@ -51,7 +51,7 @@ impl Predictor {
     pub fn load_network(&mut self, name:String, source_vs:&tch::nn::VarStore ) {
         if !self.networks.contains_key(&name) {
             let mut vs = tch::nn::VarStore::new(tch::Device::Cpu);
-            let net = TchNetwork::new(&vs.root());
+            let net = Box::new(TchNetwork::new(&vs.root()));
             vs.copy(source_vs).unwrap(); // ファイルから直接読んでも良いです。どうせ全体から見るとどちらも大差ない
             self.networks.insert(name, (vs,net) );
         }

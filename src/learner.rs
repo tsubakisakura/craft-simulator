@@ -146,7 +146,7 @@ fn add_samples_from_blobs( replay_buffer:&mut ReplayBuffer, blobs:&[String], rea
     replay_buffer.last_sample_blob = Some(blobs.last().unwrap().clone());
 }
 
-fn train( optimizer:&mut Optimizer, net:&TchNetwork, replay_buffer:&ReplayBuffer, epoch_num:usize ) {
+fn train( optimizer:&mut Optimizer, net:&dyn DualNetwork, replay_buffer:&ReplayBuffer, epoch_num:usize ) {
     eprintln!("train for replay buffer size: {}", replay_buffer.len());
 
     let mut start = Instant::now();
@@ -173,7 +173,7 @@ fn export_weights( mysql_pool:&Arc<Mutex<Pool>>, vs:&VarStore ) -> mysql::Result
     conn.exec_drop("INSERT evaluation (name, total_reward, total_count) VALUES (:name,0,0)", params!{"name" => ulid.to_string()})
 }
 
-fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, replay_buffer:&mut ReplayBuffer, optimizer:&mut Optimizer, vs:&VarStore, net:&TchNetwork, epoch:usize ) {
+fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, replay_buffer:&mut ReplayBuffer, optimizer:&mut Optimizer, vs:&VarStore, net:&dyn DualNetwork, epoch:usize ) {
     eprintln!("enumerate sample files from mysql...");
     let sample_blobs = get_new_samples( mysql_pool, &replay_buffer.last_sample_blob ).unwrap();
 
