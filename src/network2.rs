@@ -55,10 +55,17 @@ fn encode_state_batch( states:&[State], setting:&Setting ) -> Tensor {
     Tensor::of_slice(&state_vec).reshape(&[states.len() as i64, STATE_NUM as i64])
 }
 
-fn convert_to_policy_vector( t:&Tensor, offset:usize ) -> ActionVector {
+fn convert_to_policy_vector( t:&Tensor, offset:i64 ) -> ActionVector {
     let mut res = [0.0;ACTION_NUM];
-    t.slice(0,Some(offset as i64), Some(offset as i64+1), 1).copy_data(&mut res, ACTION_NUM);
+    t.slice(0,Some(offset), Some(offset+1), 1).copy_data(&mut res, ACTION_NUM);
     res
+}
+
+fn decode_pv_batch( (policy_res_t,value_res_t):(Tensor,Tensor) ) -> Vec<(ActionVector,f32)> {
+    let policy_iter = (0..policy_res_t.size2().unwrap().0).into_iter().map(|i| convert_to_policy_vector(&policy_res_t,i));
+    let value_iter = (0..value_res_t.size2().unwrap().0).into_iter().map(|i| value_res_t.double_value(&[i as i64,0]) as f32);
+
+    policy_iter.zip(value_iter).collect()
 }
 
 impl TchNetwork {
@@ -79,17 +86,8 @@ impl TchNetwork {
     }
 
     pub fn predict_batch(&self, states:&[State], setting:&Setting) -> Result<Vec<(ActionVector,f32)>, Box<dyn Error>> {
-
-        // 入力変数の作成
         let state_vec_t = encode_state_batch( states, setting );
-
-        // 推論
-        let (policy_res_t,value_res_t) = self.forward_t(&state_vec_t, false);
-
-        // 結果の取得
-        let policy_iter = (0..states.len()).into_iter().map(|i| convert_to_policy_vector(&policy_res_t,i));
-        let value_iter = (0..states.len()).into_iter().map(|i| value_res_t.double_value(&[i as i64,0]) as f32);
-
-        Ok(policy_iter.zip(value_iter).collect())
+        let pv_t = self.forward_t(&state_vec_t, false);
+        Ok(decode_pv_batch(pv_t))
     }
 }
