@@ -1,4 +1,7 @@
-﻿use super::logic::{State,Setting,Condition};
+﻿use tch::*;
+
+use super::logic::*;
+use super::mcts::*;
 
 pub const STATE_NUM : usize = 36;
 pub type StateVector = [f32;STATE_NUM];
@@ -62,4 +65,31 @@ pub fn encode_state( s:&State, setting:&Setting ) -> StateVector {
         (s.condition == Condition::HighSustain).to_onehot(),
         (s.condition == Condition::Solid).to_onehot(),
     ]
+}
+
+// 配列からテンソル作成
+// あまり効率はよくない
+pub fn encode_state_batch( states:&[State], setting:&Setting ) -> Tensor {
+
+    let mut state_vec = vec!{};
+    state_vec.resize( states.len() * STATE_NUM, 0.0 );
+
+    for i in 0..states.len() {
+        state_vec[i*STATE_NUM..(i+1)*STATE_NUM].copy_from_slice( &encode_state(&states[i],setting) );
+    }
+
+    Tensor::of_slice(&state_vec).reshape(&[states.len() as i64, STATE_NUM as i64])
+}
+
+fn convert_to_policy_vector( t:&Tensor, offset:i64 ) -> ActionVector {
+    let mut res = [0.0;ACTION_NUM];
+    t.slice(0,Some(offset), Some(offset+1), 1).copy_data(&mut res, ACTION_NUM);
+    res
+}
+
+pub fn decode_pv_batch( (policy_res_t,value_res_t):(Tensor,Tensor) ) -> Vec<(ActionVector,f32)> {
+    let policy_iter = (0..policy_res_t.size2().unwrap().0).into_iter().map(|i| convert_to_policy_vector(&policy_res_t,i));
+    let value_iter = (0..value_res_t.size2().unwrap().0).into_iter().map(|i| value_res_t.double_value(&[i as i64,0]) as f32);
+
+    policy_iter.zip(value_iter).collect()
 }
