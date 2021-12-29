@@ -10,6 +10,26 @@ use super::mcts::*;
 pub const STATE_NUM : usize = 36;
 const HIDDEN_NODES: i64 = 128;
 
+#[derive(Debug,Copy,Clone,PartialEq)]
+pub enum NetworkType {
+    FullyConnected,
+}
+
+impl argh::FromArgValue for NetworkType {
+    fn from_arg_value(value: &str) -> Result<Self, String> {
+        match value {
+            "fully-connected" => Ok(NetworkType::FullyConnected),
+            _ => Err("unknown network type".to_string()),
+        }
+    }
+}
+
+pub fn create_network(vs: &nn::Path, network_type: NetworkType) -> impl DualNetwork {
+    match network_type {
+        NetworkType::FullyConnected => TchNetwork::new(vs)
+    }
+}
+
 pub trait DualNetwork {
 
     fn forward_t(&self, input: &Tensor, train:bool) -> (Tensor,Tensor);

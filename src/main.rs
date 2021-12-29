@@ -22,6 +22,7 @@ use selfplay::{WriterParameter,EpisodeParameter,SelfPlayParameter};
 use selector::Selector;
 use learner::{LearnerParameter};
 use benchmark::BenchmarkParameter;
+use network2::NetworkType;
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(description="toplevel command")]
@@ -54,6 +55,9 @@ struct SubCommandEvaluator {
 
     #[argh(option, default="500", description="mcts simulation num")]
     mcts_simulation_num:u32,
+
+    #[argh(option, default="NetworkType::FullyConnected", description="network type")]
+    network_type: NetworkType,
 
     #[argh(option, description="use ucb1 selector")]
     ucb1:Option<f64>,
@@ -88,6 +92,9 @@ struct SubCommandGenerator {
 
     #[argh(option, default="500", description="mcts simulation num")]
     mcts_simulation_num:u32,
+
+    #[argh(option, default="NetworkType::FullyConnected", description="network type")]
+    network_type: NetworkType,
 
     #[argh(option, default="0.15", description="dirichlet noise alpha")]
     alpha:f32,
@@ -128,6 +135,9 @@ struct SubCommandLearner {
 
     #[argh(option, default="String::from(\"root\")", description="mysql user name")]
     mysql_user:String,
+
+    #[argh(option, default="NetworkType::FullyConnected", description="network type")]
+    network_type: NetworkType,
 
     #[argh(switch, description="profile with flamegraph")]
     flamegraph: bool,
@@ -194,6 +204,7 @@ fn cmd_evaluator( args:SubCommandEvaluator ) {
             eps:0.0,
             start_greedy_turn:0,
         },
+        network_type:args.network_type,
         selector:get_selector(args.ucb1, args.optimistic),
         plays_per_write:args.plays_per_write,
         thread_num:args.thread_num,
@@ -221,6 +232,7 @@ fn cmd_generator( args:SubCommandGenerator ) {
             eps:args.eps,
             start_greedy_turn:args.start_greedy_turn,
         },
+        network_type:args.network_type,
         selector:get_selector(args.ucb1, args.optimistic),
         plays_per_write:args.plays_per_write,
         thread_num:args.thread_num,
@@ -242,6 +254,7 @@ fn cmd_generator( args:SubCommandGenerator ) {
 fn cmd_learner( args:SubCommandLearner ) {
     let param = LearnerParameter {
         epochs_per_write:args.epochs_per_write,
+        network_type:args.network_type,
         replay_buffer_size:args.replay_buffer_size,
         mysql_user:args.mysql_user,
     };

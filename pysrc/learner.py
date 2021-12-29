@@ -12,6 +12,7 @@ def run_learner(args):
     cmdline = [path,"learner",
         "--epochs-per-write",str(args.epochs_per_write),
         "--replay-buffer-size",str(args.replay_buffer_size),
+        "--network-type",str(args.network_type),
         "--mysql-user",mysql_user]
     if args.flamegraph:
         cmdline.append("--flamegraph")

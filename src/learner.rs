@@ -16,6 +16,7 @@ use super::logic::*;
 pub struct LearnerParameter {
     pub epochs_per_write : usize,
     pub replay_buffer_size : usize,
+    pub network_type : NetworkType,
     pub mysql_user : String,
 }
 
@@ -217,7 +218,7 @@ pub fn run( param:&LearnerParameter ) {
         // vsとかnetとかはそんなに影響ないようです。僅かに遅くなってはいるようですが。
         // ↓↓↓ここまで
         let mut vs = nn::VarStore::new(Device::Cpu);
-        let net = TchNetwork::new(&vs.root());
+        let net = create_network(&vs.root(), param.network_type);
 
         match std::path::Path::new("weights").exists() {
             true => { vs.load("weights").unwrap(); eprintln!("load weights"); }

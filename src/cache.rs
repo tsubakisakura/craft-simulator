@@ -10,12 +10,13 @@ use super::gcs::*;
 use super::network2::*;
 
 pub struct WeightsCache {
-    weights_map : HashMap<String,Arc<VarStore>>
+    weights_map : HashMap<String,Arc<VarStore>>,
+    network_type : NetworkType,
 }
 
 impl WeightsCache {
-    pub fn new() -> WeightsCache {
-        WeightsCache { weights_map : HashMap::new() }
+    pub fn new(network_type: NetworkType) -> WeightsCache {
+        WeightsCache { weights_map : HashMap::new(), network_type: network_type }
     }
 
     pub fn load_weights(&mut self, name:&str) -> Result<Arc<VarStore>, Box<dyn Error>> {
@@ -25,7 +26,7 @@ impl WeightsCache {
             download(&path,&path)?;
 
             let mut vs = VarStore::new(Device::Cpu);
-            let _ = TchNetwork::new(&vs.root());
+            let _ = create_network(&vs.root(), self.network_type);
             vs.load(&path).unwrap();
             Arc::new(vs)
         }).clone())
