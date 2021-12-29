@@ -29,7 +29,7 @@ spec:
             python3 -u pysrc/main.py learner --epochs-per-write 300 --replay-buffer-size 80000
         resources:
           requests:
-            cpu: "2"
+            cpu: "4"
         volumeMounts:
         - name: google-cloud-key
           mountPath: /var/secrets/google
