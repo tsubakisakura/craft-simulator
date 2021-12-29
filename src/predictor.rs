@@ -52,7 +52,7 @@ impl Predictor {
     pub fn load_network(&mut self, name:String, source_vs:&tch::nn::VarStore ) {
         if !self.networks.contains_key(&name) {
             let mut vs = tch::nn::VarStore::new(tch::Device::Cpu);
-            let net = Box::new(create_network(&vs.root(), self.network_type));
+            let net = create_network(&vs.root(), self.network_type);
             vs.copy(source_vs).unwrap(); // ファイルから直接読んでも良いです。どうせ全体から見るとどちらも大差ない
             self.networks.insert(name, (vs,net) );
         }
