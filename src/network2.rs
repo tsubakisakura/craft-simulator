@@ -16,13 +16,19 @@ pub enum NetworkType {
     Residual,
 }
 
-impl argh::FromArgValue for NetworkType {
-    fn from_arg_value(value: &str) -> Result<Self, String> {
-        match value {
+impl NetworkType {
+    pub fn from_name(name: &str) -> Result<Self, String> {
+        match name {
             "fully-connected" => Ok(NetworkType::FullyConnected),
             "residual" => Ok(NetworkType::Residual),
             _ => Err("unknown network type".to_string()),
         }
+    }
+}
+
+impl argh::FromArgValue for NetworkType {
+    fn from_arg_value(value: &str) -> Result<Self, String> {
+        NetworkType::from_name(value)
     }
 }
 

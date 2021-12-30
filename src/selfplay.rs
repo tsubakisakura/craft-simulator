@@ -37,7 +37,6 @@ pub struct EpisodeParameter {
 #[derive(Debug,Clone)]
 pub struct SelfPlayParameter {
     pub episode_param : EpisodeParameter,
-    pub network_type : NetworkType,
     pub selector : Selector,
     pub plays_per_write : usize,
     pub mysql_user : String,
@@ -65,9 +64,8 @@ pub struct Replay {
 
 struct ThreadContext {
     episode_param : EpisodeParameter,
-    network_type : NetworkType,
     batch_size : usize,
-    selfplay_receiver : Receiver<(String,Arc<tch::nn::VarStore>)>,
+    selfplay_receiver : Receiver<(String,Arc<(NetworkType,tch::nn::VarStore)>)>,
     writer_sender : Sender<Replay>,
 }
 
@@ -75,7 +73,7 @@ struct CoroutineContext {
     episode_param : EpisodeParameter,
     writer_sender : Sender<Replay>,
     predict_queue : PredictQueue,
-    graph_info : RefCell<(String,Arc<tch::nn::VarStore>)>, // CellはCopy traitを要求します。StringもArcもCloneが無いのでRefCellが必要であるようです
+    graph_info : RefCell<(String,Arc<(NetworkType,tch::nn::VarStore)>)>, // CellはCopy traitを要求します。StringもArcもCloneが無いのでRefCellが必要であるようです
 }
 
 async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, predict_queue:&PredictQueue ) -> Replay {
@@ -129,7 +127,7 @@ fn selfplay_thread( ctx:ThreadContext ) {
         Err(_) => return,
     };
 
-    let mut predictor = Predictor::new(ctx.network_type);
+    let mut predictor = Predictor::new();
     predictor.load_network( graph_info.0.clone(), &*graph_info.1 );
 
     // コルーチン間の共有コンテキスト
@@ -168,14 +166,13 @@ fn selfplay_thread( ctx:ThreadContext ) {
 }
 
 // 戻り値の型は利用者側の都合でVecのタプルで返したほうが良いと思います
-fn spawn_selfplay_threads( episode_param:&EpisodeParameter, network_type:NetworkType, writer_sender:&Sender<Replay>, thread_num:u32, batch_size:usize ) -> (Vec<JoinHandle<()>>,Vec<Sender<(String,Arc<tch::nn::VarStore>)>>) {
+fn spawn_selfplay_threads( episode_param:&EpisodeParameter, writer_sender:&Sender<Replay>, thread_num:u32, batch_size:usize ) -> (Vec<JoinHandle<()>>,Vec<Sender<(String,Arc<(NetworkType,tch::nn::VarStore)>)>>) {
     let mut handles = vec![];
     let mut senders = vec![];
     for thread_id in 0..thread_num {
         let (sender,receiver) = channel();
         let ctx = ThreadContext {
             episode_param:episode_param.clone(),
-            network_type:network_type,
             batch_size:batch_size,
             selfplay_receiver:receiver,
             writer_sender:writer_sender.clone(),
@@ -244,7 +241,7 @@ fn run_simulation(param:&SelfPlayParameter ) {
     let (writer_sender,writer_receiver) = channel();
 
     // 並列処理でセルフプレイします
-    let (selfplay_handles,selfplay_senders) = spawn_selfplay_threads( &param.episode_param, param.network_type, &writer_sender, param.thread_num, param.batch_size );
+    let (selfplay_handles,selfplay_senders) = spawn_selfplay_threads( &param.episode_param, &writer_sender, param.thread_num, param.batch_size );
 
     // 書き込みスレッド作成
     let send_param : SelfPlayParameter = param.clone();
@@ -252,21 +249,18 @@ fn run_simulation(param:&SelfPlayParameter ) {
     let writer_handle = std::thread::Builder::new().name("writer".to_string()).spawn( move || { write_thread( send_mysql_pool, send_param, writer_receiver ) } ).unwrap();
 
     // 以下、終了条件を満たすまで無限ループします
-    let mut graph_cache = WeightsCache::new(param.network_type);
+    let mut graph_cache = WeightsCache::new();
     let mut ucb1_context = UCB1Context::new( mysql_pool.clone() );
 
     loop {
-        let model = match param.selector {
-            Selector::UCB1(x) => ucb1_context.get_ucb1_model(x),
-            Selector::Optimistic(x) => ucb1_context.get_optimistic_model(x),
-        };
+        let model = ucb1_context.get_model(&param.selector);
 
         match model {
             Ok(None) => {
                 eprintln!("wait for ucb1 model...");
             },
-            Ok(Some(graph_filename)) => {
-                let graph = graph_cache.load_weights(&graph_filename).unwrap();
+            Ok(Some((graph_filename,network_type))) => {
+                let graph = graph_cache.load_weights(&graph_filename, network_type).unwrap();
                 for sender in &selfplay_senders {
                     sender.send((graph_filename.clone(), graph.clone())).unwrap()
                 }

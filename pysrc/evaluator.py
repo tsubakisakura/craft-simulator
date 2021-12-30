@@ -13,7 +13,6 @@ def run_evaluator(args):
         "--plays-per-write",str(args.plays_per_write),
         "--thread-num",str(args.thread_num),
         "--mcts-simulation-num",str(args.mcts_simulation_num),
-        "--network-type",str(args.network_type),
         "--mysql-user",mysql_user]
     if args.flamegraph:
         cmdline.append("--flamegraph")

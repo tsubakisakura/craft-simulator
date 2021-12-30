@@ -59,7 +59,6 @@ def main():
     parser_generator.add_argument('--plays-per-write', type=int, default=100, help='plays per write.')
     parser_generator.add_argument('--thread-num', type=int, default=4, help='thread num.')
     parser_generator.add_argument('--mcts-simulation-num', type=int, default=500, help='mcts simulation num.')
-    parser_generator.add_argument('--network-type', type=str, default='fully-connected', help='network type')
     parser_generator.add_argument('--flamegraph', action='store_true', help='output flamegraph')
     parser_generator.set_defaults(handler=command_generator)
 
@@ -67,7 +66,6 @@ def main():
     parser_evaluator.add_argument('--plays-per-write', type=int, default=10, help='plays per write.')
     parser_evaluator.add_argument('--thread-num', type=int, default=4, help='thread num.')
     parser_evaluator.add_argument('--mcts-simulation-num', type=int, default=500, help='mcts simulation num.')
-    parser_evaluator.add_argument('--network-type', type=str, default='fully-connected', help='network type')
     parser_evaluator.add_argument('--flamegraph', action='store_true', help='output flamegraph')
     parser_evaluator.set_defaults(handler=command_evaluator)
 
