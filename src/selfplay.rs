@@ -256,17 +256,17 @@ fn run_simulation(param:&SelfPlayParameter ) {
         let model = ucb1_context.get_model(&param.selector);
 
         match model {
-            Ok(None) => {
+            Err(super::selector::Error::Empty) => {
                 eprintln!("wait for ucb1 model...");
             },
-            Ok(Some((graph_filename,network_type))) => {
+            Ok((graph_filename,network_type)) => {
                 let graph = graph_cache.load_weights(&graph_filename, network_type).unwrap();
                 for sender in &selfplay_senders {
                     sender.send((graph_filename.clone(), graph.clone())).unwrap()
                 }
             },
             Err(x) => {
-                eprintln!("error on mysql {}", x);
+                eprintln!("error on mysql {:?}", x);
                 break;
             },
         }
