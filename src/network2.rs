@@ -12,15 +12,43 @@ const HIDDEN_NODES: i64 = 128;
 
 #[derive(Debug,Copy,Clone,PartialEq)]
 pub enum NetworkType {
-    FullyConnected,
-    Residual,
+    FullyConnected(usize),
+    Residual(usize),
 }
 
 impl NetworkType {
+
+    fn parse_fc(xs:&[&str]) -> Result<Self, String> {
+        if xs.len() < 1 {
+            return Err("can't parse fc".to_string())
+        }
+
+        match xs[0].parse::<usize>() {
+            Ok(x) => Ok(NetworkType::FullyConnected(x)),
+            Err(_) => Err("can't parse depth".to_string()),
+        }
+    }
+
+    fn parse_residual(xs:&[&str]) -> Result<Self, String> {
+        if xs.len() < 1 {
+            return Err("can't parse residual".to_string())
+        }
+
+        match xs[0].parse::<usize>() {
+            Ok(x) => Ok(NetworkType::Residual(x)),
+            Err(_) => Err("can't parse depth".to_string()),
+        }
+    }
+
     pub fn from_name(name: &str) -> Result<Self, String> {
-        match name {
-            "fc" => Ok(NetworkType::FullyConnected),
-            "residual" => Ok(NetworkType::Residual),
+        let xs : Vec<&str> = name.split('-').collect();
+        if xs.len() < 1 {
+            return Err("can't parse NetworkType".to_string())
+        }
+
+        match xs[0] {
+            "fc" => NetworkType::parse_fc(&xs[1..]),
+            "residual" => NetworkType::parse_residual(&xs[1..]),
             _ => Err("unknown network type".to_string()),
         }
     }
@@ -34,8 +62,8 @@ impl argh::FromArgValue for NetworkType {
 
 pub fn create_network(vs: &nn::Path, network_type: NetworkType) -> Box<dyn DualNetwork> {
     match network_type {
-        NetworkType::FullyConnected => Box::new(TchNetwork::new(vs)),
-        NetworkType::Residual => Box::new(ResidualNetwork::new(vs)),
+        NetworkType::FullyConnected(depth) => Box::new(TchNetwork::new(vs, depth)),
+        NetworkType::Residual(depth) => Box::new(ResidualNetwork::new(vs, depth)),
     }
 }
 
@@ -56,17 +84,22 @@ pub struct TchNetwork {
     value_net:SequentialT,
 }
 
-fn create_main_network(vs: &nn::Path) -> SequentialT {
-    nn::seq_t()
-        .add(nn::linear( vs / "layer1", STATE_NUM as i64, HIDDEN_NODES, Default::default()))
-        .add_fn(|xs| xs.relu())
-        .add(nn::linear( vs / "layer2", HIDDEN_NODES, HIDDEN_NODES, Default::default()))
-        .add_fn(|xs| xs.relu())
-        .add(nn::linear( vs / "layer3", HIDDEN_NODES, HIDDEN_NODES, Default::default()))
-        .add_fn(|xs| xs.relu())
-        .add(nn::linear( vs / "layer4", HIDDEN_NODES, HIDDEN_NODES, Default::default()))
-        .add_fn(|xs| xs.relu())
-        .add_fn_t(|xs, train| xs.dropout(0.1, train))
+fn create_main_network(vs: &nn::Path, depth: usize) -> SequentialT {
+    if depth == 0 {
+        panic!("depth must be greater than 0");
+    }
+
+    let mut net = nn::seq_t()
+        .add(nn::linear( vs / "layer0", STATE_NUM as i64, HIDDEN_NODES, Default::default()))
+        .add_fn(|xs| xs.relu());
+
+    for i in 1..depth {
+        net = net
+            .add(nn::linear( vs / format!("layer{}",i), HIDDEN_NODES, HIDDEN_NODES, Default::default()))
+            .add_fn(|xs| xs.relu());
+    }
+
+    net.add_fn_t(|xs, train| xs.dropout(0.1, train))
 }
 
 fn create_policy_network(vs: &nn::Path) -> SequentialT {
@@ -82,9 +115,9 @@ fn create_value_network(vs: &nn::Path) -> SequentialT {
 }
 
 impl TchNetwork {
-    pub fn new(vs: &nn::Path) -> TchNetwork {
+    pub fn new(vs: &nn::Path, depth: usize) -> TchNetwork {
         TchNetwork {
-            main_net: create_main_network(vs),
+            main_net: create_main_network(vs, depth),
             policy_net: create_policy_network(vs),
             value_net: create_value_network(vs),
         }
@@ -131,9 +164,9 @@ impl ResidualUnit {
 }
 
 impl ResidualNetwork {
-    pub fn new(vs: &nn::Path) -> ResidualNetwork {
+    pub fn new(vs: &nn::Path, depth: usize) -> ResidualNetwork {
         let input_net = nn::linear( vs / "input", STATE_NUM as i64, HIDDEN_NODES, Default::default());
-        let residual_units = (0..4).into_iter().map(|i| ResidualUnit::new(&(vs/format!("residual_units_{}",i)))).collect();
+        let residual_units = (0..depth).into_iter().map(|i| ResidualUnit::new(&(vs/format!("residual_units_{}",i)))).collect();
         let policy_net = create_policy_network(vs);
         let value_net = create_value_network(vs);
 
