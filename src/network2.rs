@@ -19,7 +19,7 @@ pub enum NetworkType {
 impl NetworkType {
     pub fn from_name(name: &str) -> Result<Self, String> {
         match name {
-            "fully-connected" => Ok(NetworkType::FullyConnected),
+            "fc" => Ok(NetworkType::FullyConnected),
             "residual" => Ok(NetworkType::Residual),
             _ => Err("unknown network type".to_string()),
         }
