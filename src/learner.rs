@@ -25,16 +25,18 @@ struct ReplayBuffer {
     policies:Tensor,
     values:Tensor,
     max_length:i64,
+    device:Device,
     last_sample_blob:Option<String>, // 不格好だけれど一旦ここで定義します。いつか分離したい
 }
 
 impl ReplayBuffer {
-    fn new( max_length: usize ) -> ReplayBuffer {
+    fn new( device: Device, max_length: usize ) -> ReplayBuffer {
         ReplayBuffer {
-            states: Tensor::zeros(&[0_i64, STATE_NUM as i64], (Kind::Float, Device::Cpu)),
-            policies: Tensor::zeros(&[0_i64, ACTION_NUM as i64], (Kind::Float, Device::Cpu)),
-            values: Tensor::zeros(&[0_i64, 1], (Kind::Float, Device::Cpu)),
+            states: Tensor::zeros(&[0_i64, STATE_NUM as i64], (Kind::Float, device)),
+            policies: Tensor::zeros(&[0_i64, ACTION_NUM as i64], (Kind::Float, device)),
+            values: Tensor::zeros(&[0_i64, 1], (Kind::Float, device)),
             max_length: max_length as i64,
+            device: device,
             last_sample_blob: None,
         }
     }
@@ -48,9 +50,9 @@ impl ReplayBuffer {
     }
 
     fn append(&mut self, (states,policies,values):(Tensor,Tensor,Tensor) ) {
-        self.states = Tensor::cat(&[self.states.shallow_clone(),states],0);
-        self.policies = Tensor::cat(&[self.policies.shallow_clone(),policies],0);
-        self.values = Tensor::cat(&[self.values.shallow_clone(),values],0);
+        self.states = Tensor::cat(&[self.states.shallow_clone(),states.to(self.device)],0);
+        self.policies = Tensor::cat(&[self.policies.shallow_clone(),policies.to(self.device)],0);
+        self.values = Tensor::cat(&[self.values.shallow_clone(),values.to(self.device)],0);
 
         // 第１列目が想定より大きければ削ります
         let length = self.len();
@@ -214,15 +216,19 @@ pub fn run( param:&LearnerParameter ) {
     let mysql_pool_base = Pool::new_manual(2,2,Opts::from_url(&url).unwrap()).unwrap();
     let mysql_pool = Arc::new(Mutex::new(mysql_pool_base));
 
+    // GPUが使える場合は使う
+    let device = Device::cuda_if_available();
+    eprintln!("device: {:?}", device);
+
     // ここから学習のデータ構造作成
-    let mut replay_buffer = ReplayBuffer::new(param.replay_buffer_size);
+    let mut replay_buffer = ReplayBuffer::new(device, param.replay_buffer_size);
 
     loop {
         // 理由が分からないですが、このあたりをループの中に入れてあげると実行速度を維持できるので、現状このようにしています。
         // なお影響力が大きいのがoptimizerです。optimizerを外に出すとめちゃくちゃ遅くなります。
         // vsとかnetとかはそんなに影響ないようです。僅かに遅くなってはいるようですが。
         // ↓↓↓ここまで
-        let mut vs = nn::VarStore::new(Device::Cpu);
+        let mut vs = nn::VarStore::new(device);
         let net = create_network(&vs.root(), param.network_type);
 
         match std::path::Path::new("weights").exists() {

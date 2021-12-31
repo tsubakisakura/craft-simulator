@@ -1,7 +1,7 @@
 ###############################################################################
 # 共通の基本レイヤー
 ###############################################################################
-FROM debian:11.2-slim as base
+FROM nvidia/cuda:11.3.0-devel-ubuntu20.04 as base
 WORKDIR /workdir
 
 RUN apt-get update \
@@ -36,10 +36,17 @@ ENV OPENSSL_INCLUDE_DIR=/usr/include/openssl
 
 # libtorchのインストール
 # cxx11-abiである必要があります。通常バージョンのほうだとリンク時にエラーした
-RUN wget -q https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.10.1%2Bcpu.zip \
- && unzip libtorch-cxx11-abi-shared-with-deps-1.10.1+cpu.zip -d /usr/local \
- && rm libtorch-cxx11-abi-shared-with-deps-1.10.1+cpu.zip
+# CPU版ではこちら
+#RUN wget -q https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.10.1%2Bcpu.zip \
+# && unzip libtorch-cxx11-abi-shared-with-deps-1.10.1+cpu.zip -d /usr/local \
+# && rm libtorch-cxx11-abi-shared-with-deps-1.10.1+cpu.zip
+# GPU版ではこちら
+RUN wget -q https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-shared-with-deps-1.10.1%2Bcu113.zip \
+ && unzip libtorch-cxx11-abi-shared-with-deps-1.10.1+cu113.zip -d /usr/local \
+ && rm libtorch-cxx11-abi-shared-with-deps-1.10.1+cu113.zip
+
 ENV LIBTORCH /usr/local/libtorch
+ENV TORCH_CUDA_VERSION=cu113
 
 # 依存ライブラリのビルド
 COPY ./Cargo.toml ./Cargo.lock ./
@@ -73,7 +80,8 @@ RUN pip install --upgrade pip \
         google-cloud-storage
 
 ENV LIBTORCH=/usr/local/libtorch
-ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib
+ENV TORCH_CUDA_VERSION=cu113
+ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:${LD_LIBRARY_PATH}
 
 COPY --from=build /usr/local/libtorch/lib/*.so* /usr/local/libtorch/lib/
 COPY --from=build /workdir/target/release/craft-simulator ./target/release/
