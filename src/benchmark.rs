@@ -13,7 +13,7 @@ pub struct BenchmarkParameter {
 pub fn run_benchmark(param:BenchmarkParameter) {
 
     let vs = tch::nn::VarStore::new(tch::Device::Cpu);
-    let network = TchNetwork::new(&vs.root(), 4);
+    let network = TchNetwork::new(&vs.root(), 4, 128);
 
     let states : Vec<State> = (0..param.batch_size).map( |_| param.setting.initial_state() ).collect();
     let mut remain = param.plays_per_write;

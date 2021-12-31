@@ -130,7 +130,7 @@ struct SubCommandLearner {
     #[argh(option, default="String::from(\"root\")", description="mysql user name")]
     mysql_user:String,
 
-    #[argh(option, default="NetworkType::FullyConnected(4)", description="network type")]
+    #[argh(option, default="NetworkType::FullyConnected(4,128)", description="network type")]
     network_type: NetworkType,
 
     #[argh(switch, description="profile with flamegraph")]

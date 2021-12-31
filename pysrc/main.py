@@ -51,7 +51,7 @@ def main():
     parser_learner = subparser.add_parser('learner', help='Run learner mode.')
     parser_learner.add_argument('--epochs-per-write', type=int, default=300, help='epoch num.')
     parser_learner.add_argument('--replay-buffer-size', type=int, default=40000, help='replay buffer size')
-    parser_learner.add_argument('--network-type', type=str, default='fc-4', help='network type')
+    parser_learner.add_argument('--network-type', type=str, default='fc-4-128', help='network type')
     parser_learner.add_argument('--flamegraph', action='store_true', help='output flamegraph')
     parser_learner.set_defaults(handler=command_learner)
 

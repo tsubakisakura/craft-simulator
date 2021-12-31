@@ -8,36 +8,49 @@ use super::network::{encode_state_batch,decode_pv_batch};
 use super::mcts::*;
 
 pub const STATE_NUM : usize = 36;
-const HIDDEN_NODES: i64 = 128;
 
 #[derive(Debug,Copy,Clone,PartialEq)]
 pub enum NetworkType {
-    FullyConnected(usize),
-    Residual(usize),
+    FullyConnected(usize,usize),
+    Residual(usize,usize),
 }
 
 impl NetworkType {
 
     fn parse_fc(xs:&[&str]) -> Result<Self, String> {
-        if xs.len() < 1 {
+        if xs.len() < 2 {
             return Err("can't parse fc".to_string())
         }
 
-        match xs[0].parse::<usize>() {
-            Ok(x) => Ok(NetworkType::FullyConnected(x)),
+        let depth = match xs[0].parse::<usize>() {
+            Ok(x) => Ok(x),
             Err(_) => Err("can't parse depth".to_string()),
-        }
+        }?;
+
+        let hidden_nodes = match xs[1].parse::<usize>() {
+            Ok(x) => Ok(x),
+            Err(_) => Err("can't parse hidden_nodes".to_string()),
+        }?;
+
+        Ok(NetworkType::FullyConnected(depth, hidden_nodes))
     }
 
     fn parse_residual(xs:&[&str]) -> Result<Self, String> {
-        if xs.len() < 1 {
+        if xs.len() < 2 {
             return Err("can't parse residual".to_string())
         }
 
-        match xs[0].parse::<usize>() {
-            Ok(x) => Ok(NetworkType::Residual(x)),
+        let depth = match xs[0].parse::<usize>() {
+            Ok(x) => Ok(x),
             Err(_) => Err("can't parse depth".to_string()),
-        }
+        }?;
+
+        let hidden_nodes = match xs[1].parse::<usize>() {
+            Ok(x) => Ok(x),
+            Err(_) => Err("can't parse hidden_nodes".to_string()),
+        }?;
+
+        Ok(NetworkType::Residual(depth, hidden_nodes))
     }
 
     pub fn from_name(name: &str) -> Result<Self, String> {
@@ -55,8 +68,8 @@ impl NetworkType {
 
     pub fn to_string(&self) -> String {
         match *self {
-            NetworkType::FullyConnected(x) => format!("fc-{}", x),
-            NetworkType::Residual(x) => format!("residual-{}", x),
+            NetworkType::FullyConnected(depth,hidden_nodes) => format!("fc-{}-{}", depth, hidden_nodes),
+            NetworkType::Residual(depth,hidden_nodes) => format!("residual-{}-{}", depth, hidden_nodes),
         }
     }
 }
@@ -69,8 +82,8 @@ impl argh::FromArgValue for NetworkType {
 
 pub fn create_network(vs: &nn::Path, network_type: NetworkType) -> Box<dyn DualNetwork> {
     match network_type {
-        NetworkType::FullyConnected(depth) => Box::new(TchNetwork::new(vs, depth)),
-        NetworkType::Residual(depth) => Box::new(ResidualNetwork::new(vs, depth)),
+        NetworkType::FullyConnected(depth, hidden_nodes) => Box::new(TchNetwork::new(vs, depth, hidden_nodes)),
+        NetworkType::Residual(depth, hidden_nodes) => Box::new(ResidualNetwork::new(vs, depth, hidden_nodes)),
     }
 }
 
@@ -91,42 +104,44 @@ pub struct TchNetwork {
     value_net:SequentialT,
 }
 
-fn create_main_network(vs: &nn::Path, depth: usize) -> SequentialT {
+fn create_main_network(vs: &nn::Path, depth: usize, hidden_nodes: usize) -> SequentialT {
+    let hidden_nodes = hidden_nodes as i64;
+
     if depth == 0 {
         panic!("depth must be greater than 0");
     }
 
     let mut net = nn::seq_t()
-        .add(nn::linear( vs / "layer0", STATE_NUM as i64, HIDDEN_NODES, Default::default()))
+        .add(nn::linear( vs / "layer0", STATE_NUM as i64, hidden_nodes, Default::default()))
         .add_fn(|xs| xs.relu());
 
     for i in 1..depth {
         net = net
-            .add(nn::linear( vs / format!("layer{}",i), HIDDEN_NODES, HIDDEN_NODES, Default::default()))
+            .add(nn::linear( vs / format!("layer{}",i), hidden_nodes, hidden_nodes, Default::default()))
             .add_fn(|xs| xs.relu());
     }
 
     net.add_fn_t(|xs, train| xs.dropout(0.1, train))
 }
 
-fn create_policy_network(vs: &nn::Path) -> SequentialT {
+fn create_policy_network(vs: &nn::Path, hidden_nodes: usize) -> SequentialT {
     nn::seq_t()
-        .add(nn::linear( vs / "policy", HIDDEN_NODES, ACTION_NUM as i64, Default::default()))
+        .add(nn::linear( vs / "policy", hidden_nodes as i64, ACTION_NUM as i64, Default::default()))
         .add_fn(|xs| xs.softmax(1,Kind::Float))
 }
 
-fn create_value_network(vs: &nn::Path) -> SequentialT {
+fn create_value_network(vs: &nn::Path, hidden_nodes: usize) -> SequentialT {
     nn::seq_t()
-        .add(nn::linear( vs / "value", HIDDEN_NODES, 1, Default::default()))
+        .add(nn::linear( vs / "value", hidden_nodes as i64, 1, Default::default()))
         .add_fn(|xs| xs.sigmoid())
 }
 
 impl TchNetwork {
-    pub fn new(vs: &nn::Path, depth: usize) -> TchNetwork {
+    pub fn new(vs: &nn::Path, depth: usize, hidden_nodes: usize) -> TchNetwork {
         TchNetwork {
-            main_net: create_main_network(vs, depth),
-            policy_net: create_policy_network(vs),
-            value_net: create_value_network(vs),
+            main_net: create_main_network(vs, depth, hidden_nodes),
+            policy_net: create_policy_network(vs, hidden_nodes),
+            value_net: create_value_network(vs, hidden_nodes),
         }
     }
 }
@@ -153,15 +168,16 @@ pub struct ResidualNetwork {
 }
 
 impl ResidualUnit {
-    pub fn new(vs: &nn::Path) -> ResidualUnit {
+    pub fn new(vs: &nn::Path, hidden_nodes: usize) -> ResidualUnit {
+        let hidden_nodes = hidden_nodes as i64;
         ResidualUnit { main_net: nn::seq_t()
-            .add(nn::batch_norm1d( vs / "bn1", HIDDEN_NODES, Default::default()))
+            .add(nn::batch_norm1d( vs / "bn1", hidden_nodes, Default::default()))
             .add_fn(|xs| xs.relu())
-            .add(nn::linear( vs / "layer1", HIDDEN_NODES, HIDDEN_NODES, Default::default()))
-            .add(nn::batch_norm1d( vs / "bn2", HIDDEN_NODES, Default::default()))
+            .add(nn::linear( vs / "layer1", hidden_nodes, hidden_nodes, Default::default()))
+            .add(nn::batch_norm1d( vs / "bn2", hidden_nodes, Default::default()))
             .add_fn(|xs| xs.relu())
             .add_fn_t(|xs, train| xs.dropout(0.3, train))
-            .add(nn::linear( vs / "layer2", HIDDEN_NODES, HIDDEN_NODES, Default::default()))
+            .add(nn::linear( vs / "layer2", hidden_nodes, hidden_nodes, Default::default()))
         }
     }
 
@@ -171,11 +187,11 @@ impl ResidualUnit {
 }
 
 impl ResidualNetwork {
-    pub fn new(vs: &nn::Path, depth: usize) -> ResidualNetwork {
-        let input_net = nn::linear( vs / "input", STATE_NUM as i64, HIDDEN_NODES, Default::default());
-        let residual_units = (0..depth).into_iter().map(|i| ResidualUnit::new(&(vs/format!("residual_units_{}",i)))).collect();
-        let policy_net = create_policy_network(vs);
-        let value_net = create_value_network(vs);
+    pub fn new(vs: &nn::Path, depth: usize, hidden_nodes: usize) -> ResidualNetwork {
+        let input_net = nn::linear( vs / "input", STATE_NUM as i64, hidden_nodes as i64, Default::default());
+        let residual_units = (0..depth).into_iter().map(|i| ResidualUnit::new(&(vs/format!("residual_units_{}",i)),hidden_nodes)).collect();
+        let policy_net = create_policy_network(vs, hidden_nodes);
+        let value_net = create_value_network(vs, hidden_nodes);
 
         ResidualNetwork { input_net, residual_units, policy_net, value_net }
     }
