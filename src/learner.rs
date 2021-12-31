@@ -164,17 +164,22 @@ fn train( optimizer:&mut Optimizer, net:&Box<dyn DualNetwork>, replay_buffer:&Re
     }
 }
 
-fn export_weights( mysql_pool:&Arc<Mutex<Pool>>, vs:&VarStore ) -> mysql::Result<()> {
+fn export_weights( mysql_pool:&Arc<Mutex<Pool>>, vs:&VarStore, network_type:&NetworkType ) -> mysql::Result<()> {
     let ulid = Ulid::new();
     eprintln!("uploading weights... {}", ulid);
     vs.save("weights").unwrap();
     upload("weights", &format!("weights/{}", ulid), "application/x-weights").unwrap();
 
     let mut conn = mysql_pool.lock().unwrap().get_conn()?;
-    conn.exec_drop("INSERT evaluation (name, total_reward, total_count) VALUES (:name,0,0)", params!{"name" => ulid.to_string()})
+    let mut tx = conn.start_transaction(TxOpts::default()).unwrap();
+
+    tx.exec_drop("INSERT evaluation (name, total_reward, total_count) VALUES (:name,0,0)", params!{"name" => ulid.to_string()})?;
+    tx.exec_drop("INSERT network (name, type) VALUES (:name,:type)", params!{"name" => ulid.to_string(), "type" => network_type.to_string()})?;
+
+    tx.commit()
 }
 
-fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, replay_buffer:&mut ReplayBuffer, optimizer:&mut Optimizer, vs:&VarStore, net:&Box<dyn DualNetwork>, epoch:usize ) {
+fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, replay_buffer:&mut ReplayBuffer, optimizer:&mut Optimizer, vs:&VarStore, net:&Box<dyn DualNetwork>, network_type:&NetworkType, epoch:usize ) {
     eprintln!("enumerate sample files from mysql...");
     let sample_blobs = get_new_samples( mysql_pool, &replay_buffer.last_sample_blob ).unwrap();
 
@@ -184,11 +189,11 @@ fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, replay_buffer:&mut ReplayBuffer
     if !replay_buffer.is_empty() {
         // バッファに何かあるなら学習して出力します。
         train( optimizer, net, replay_buffer, epoch );
-        export_weights( &mysql_pool, vs ).unwrap();
+        export_weights( &mysql_pool, vs, network_type ).unwrap();
     }
     else if !is_exist_model(mysql_pool).unwrap() {
         // バッファに何もなく、モデルもないなら、今のモデルを初期状態として出力します。
-        export_weights( &mysql_pool, vs ).unwrap();
+        export_weights( &mysql_pool, vs, network_type ).unwrap();
     }
     else {
         // バッファに何もないけど、モデルはある状態です。
@@ -229,6 +234,6 @@ pub fn run( param:&LearnerParameter ) {
         let mut optimizer = adam_opt.build(&vs, 1e-3).unwrap();
         // ↑↑↑ここまで
 
-        run_epoch_loop( &mysql_pool, &mut replay_buffer, &mut optimizer, &vs, &net, param.epochs_per_write );
+        run_epoch_loop( &mysql_pool, &mut replay_buffer, &mut optimizer, &vs, &net, &param.network_type, param.epochs_per_write );
     }
 }

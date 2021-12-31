@@ -52,6 +52,13 @@ impl NetworkType {
             _ => Err("unknown network type".to_string()),
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match *self {
+            NetworkType::FullyConnected(x) => format!("fc-{}", x),
+            NetworkType::Residual(x) => format!("residual-{}", x),
+        }
+    }
 }
 
 impl argh::FromArgValue for NetworkType {
