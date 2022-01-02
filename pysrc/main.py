@@ -21,12 +21,6 @@ def command_generator(args):
     print("done.", file=sys.stderr)
     generator.command_generator(args)
 
-def command_gcs(args):
-    print("loading modules...", file=sys.stderr)
-    misc = importlib.import_module('misc')
-    print("done.", file=sys.stderr)
-    misc.command_gcs(args)
-
 def command_upload(args):
     print("loading modules...", file=sys.stderr)
     misc = importlib.import_module('misc')
@@ -68,9 +62,6 @@ def main():
     parser_evaluator.add_argument('--mcts-simulation-num', type=int, default=500, help='mcts simulation num.')
     parser_evaluator.add_argument('--flamegraph', action='store_true', help='output flamegraph')
     parser_evaluator.set_defaults(handler=command_evaluator)
-
-    parser_gcs = subparser.add_parser('gcs', help='run gcs api proxy.')
-    parser_gcs.set_defaults(handler=command_gcs)
 
     parser_upload = subparser.add_parser('upload', help='upload to gcs.')
     parser_upload.add_argument('source', type=str, help='source path.')
