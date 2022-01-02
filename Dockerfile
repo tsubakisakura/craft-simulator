@@ -10,9 +10,9 @@ RUN apt-get update \
  && apt-get clean
 
 ###############################################################################
-# ビルド用バイナリ
+# 依存ライブラリのビルド
 ###############################################################################
-FROM base as build
+FROM base as dependencies
 
 # rustup を非対話的環境でインストールする方法
 # https://qiita.com/maguro_tuna/items/f69b2e41f753d2ff0cc2
@@ -47,6 +47,12 @@ RUN wget -q https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-share
 
 ENV LIBTORCH /usr/local/libtorch
 ENV TORCH_CUDA_VERSION=cu113
+
+###############################################################################
+# メインのビルド作業
+###############################################################################
+
+FROM dependencies as build
 
 # 依存ライブラリのビルド
 COPY ./Cargo.toml ./Cargo.lock ./
@@ -83,7 +89,7 @@ ENV LIBTORCH=/usr/local/libtorch
 ENV TORCH_CUDA_VERSION=cu113
 ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:${LD_LIBRARY_PATH}
 
-COPY --from=build /usr/local/libtorch/lib/*.so* /usr/local/libtorch/lib/
+COPY --from=dependencies /usr/local/libtorch/lib/*.so* /usr/local/libtorch/lib/
 COPY --from=build /workdir/target/release/craft-simulator ./target/release/
 COPY ./pysrc/ ./pysrc
 CMD ["/bin/bash"]
