@@ -1,5 +1,4 @@
 import sshtunnel
-import pymysql
 
 from credentials import *
 
@@ -13,20 +12,6 @@ def get_secret(name):
 
 def get_mysql_password():
     return get_secret(mysql_password_name)
-
-def with_mysql_connection(func):
-    print("get mysql secrets...")
-    mysql_password = get_secret(mysql_password_name)
-
-    print("connecting mysql...")
-    connection = pymysql.connect(
-        host = "127.0.0.1",
-        port = 3306,
-        user=mysql_user,
-        password=mysql_password,
-        db="craft")
-
-    return func(connection)
 
 def with_ssh_tunnel(func):
     print("get ssh secrets...")

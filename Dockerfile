@@ -79,8 +79,6 @@ RUN apt-get update \
 
 RUN pip install --upgrade pip \
  && pip install --no-cache-dir \
-        ulid-py \
-        pymysql \
         sshtunnel \
         google-cloud-secret-manager \
         google-cloud-storage
