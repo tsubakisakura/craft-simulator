@@ -82,7 +82,7 @@ impl argh::FromArgValue for NetworkType {
 
 pub fn create_network(vs: &nn::Path, network_type: NetworkType) -> Box<dyn DualNetwork> {
     match network_type {
-        NetworkType::FullyConnected(depth, hidden_nodes) => Box::new(TchNetwork::new(vs, depth, hidden_nodes)),
+        NetworkType::FullyConnected(depth, hidden_nodes) => Box::new(FullyConnectedNetwork::new(vs, depth, hidden_nodes)),
         NetworkType::Residual(depth, hidden_nodes) => Box::new(ResidualNetwork::new(vs, depth, hidden_nodes)),
     }
 }
@@ -98,7 +98,7 @@ pub trait DualNetwork {
     }
 }
 
-pub struct TchNetwork {
+pub struct FullyConnectedNetwork {
     main_net:SequentialT,
     policy_net:SequentialT,
     value_net:SequentialT,
@@ -136,9 +136,9 @@ fn create_value_network(vs: &nn::Path, hidden_nodes: usize) -> SequentialT {
         .add_fn(|xs| xs.sigmoid())
 }
 
-impl TchNetwork {
-    pub fn new(vs: &nn::Path, depth: usize, hidden_nodes: usize) -> TchNetwork {
-        TchNetwork {
+impl FullyConnectedNetwork {
+    pub fn new(vs: &nn::Path, depth: usize, hidden_nodes: usize) -> FullyConnectedNetwork {
+        FullyConnectedNetwork {
             main_net: create_main_network(vs, depth, hidden_nodes),
             policy_net: create_policy_network(vs, hidden_nodes),
             value_net: create_value_network(vs, hidden_nodes),
@@ -146,7 +146,7 @@ impl TchNetwork {
     }
 }
 
-impl DualNetwork for TchNetwork {
+impl DualNetwork for FullyConnectedNetwork {
     fn forward_t(&self, input: &Tensor, train:bool) -> (Tensor,Tensor) {
         let main_output = self.main_net.forward_t(input, train);
         let policy_output = self.policy_net.forward_t(&main_output, train);
