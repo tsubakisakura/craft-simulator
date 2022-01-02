@@ -26,7 +26,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            python3 -u pysrc/main.py generator --plays-per-write 500 --thread-num 4 --mcts-simulation-num 1500
+            python3 -u pysrc/simulator.py generator --plays-per-write 500 --thread-num 4 --mcts-simulation-num 1500
         resources:
           requests:
             cpu: "4.5"
