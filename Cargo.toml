@@ -16,6 +16,6 @@ rand = "0.6.5"
 mysql = "21.0.2"
 ulid = "0.5.0"
 bzip2 = "0.4.3"
-futures = "0.3"
+noop-waker = "0.1.0"
 pprof = { version = "0.4", features = ["flamegraph"] }
 tch = "0.6"

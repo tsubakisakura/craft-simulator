@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::task::Context;
-use futures::task; // noopのためにuseしてるので可能なら消したい
+use noop_waker::noop_waker;
 
 pub struct Executor {
     tasks: Vec<Pin<Box<dyn Future<Output = ()>>>>,
@@ -19,7 +19,7 @@ impl Executor {
     }
 
     pub fn poll_all(&mut self) {
-        let waker = task::noop_waker();
+        let waker = noop_waker();
         let mut ctx = Context::from_waker(&waker);
 
         // 内部にあるタスクを全部１回ずつ実行して新しいベクタに入れ替えます
