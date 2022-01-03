@@ -2,6 +2,7 @@ use std::io::{BufReader,Read};
 
 use bzip2::read::BzDecoder;
 
+use super::logic::*;
 use super::selfplay::*;
 use super::gcs::*;
 
@@ -25,7 +26,58 @@ fn get_records( record_name: String ) -> Vec<Record> {
     bincode::deserialize(&serialized).unwrap()
 }
 
+const HEADER: [&str; 16] = [
+    "TURN",
+    "作業",
+    "品質",
+    "耐久",
+    "CP",
+    "IQ",
+    "設計",
+    "倹約",
+    "ヴェネ",
+    "グレ",
+    "イノベ",
+    "アート",
+    "最終",
+    "確信",
+    "マニ",
+    "状態",
+];
+
+fn format_state( s:&State ) -> String {
+    format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        s.turn,
+        s.working,
+        s.quality,
+        s.durability,
+        s.cp,
+        s.inner_quiet,
+        s.careful_observation,
+        s.waste_not,
+        s.veneration,
+        s.great_strides,
+        s.innovation,
+        s.elements,
+        s.final_appraisal,
+        s.muscle_memory,
+        s.manipulation,
+        s.condition.translate_ja(),
+    )
+}
+
+fn write_record( record: &Record ) {
+    println!("{}", HEADER.join("\t").to_string());
+
+    for sample in &record.samples {
+        println!("{}\t{}", format_state(&sample.state), sample.action.translate_ja());
+    }
+}
+
 pub fn run_replay( record_name:String ) {
     let records = get_records(record_name);
-    println!("{:?}", records );
+
+    for record in records {
+        write_record( &record );
+    }
 }
