@@ -15,12 +15,12 @@ use super::logic::*;
 
 pub struct LearnerParameter {
     pub epochs_per_write : usize,
-    pub replay_buffer_size : usize,
+    pub record_buffer_size : usize,
     pub network_type : NetworkType,
     pub mysql_user : String,
 }
 
-struct ReplayBuffer {
+struct RecordBuffer {
     states:Tensor,
     policies:Tensor,
     values:Tensor,
@@ -29,9 +29,9 @@ struct ReplayBuffer {
     last_sample_blob:Option<String>, // 不格好だけれど一旦ここで定義します。いつか分離したい
 }
 
-impl ReplayBuffer {
-    fn new( device: Device, max_length: usize ) -> ReplayBuffer {
-        ReplayBuffer {
+impl RecordBuffer {
+    fn new( device: Device, max_length: usize ) -> RecordBuffer {
+        RecordBuffer {
             states: Tensor::zeros(&[0_i64, STATE_NUM as i64], (Kind::Float, device)),
             policies: Tensor::zeros(&[0_i64, ACTION_NUM as i64], (Kind::Float, device)),
             values: Tensor::zeros(&[0_i64, 1], (Kind::Float, device)),
@@ -133,7 +133,7 @@ fn is_exist_model( mysql_pool:&Arc<Mutex<Pool>> ) -> mysql::Result<bool> {
     Ok( ret > 0 )
 }
 
-fn add_samples_from_blobs( replay_buffer:&mut ReplayBuffer, blobs:&[String], read_before:i64 ) {
+fn add_samples_from_blobs( record_buffer:&mut RecordBuffer, blobs:&[String], read_before:i64 ) {
     if blobs.len() == 0 {
         return
     }
@@ -141,22 +141,22 @@ fn add_samples_from_blobs( replay_buffer:&mut ReplayBuffer, blobs:&[String], rea
     let samples = download_samples( blobs.last().unwrap() );
     let read_sum = read_before + samples.0.size2().unwrap().0;
 
-    if read_sum < replay_buffer.max_length {
-        add_samples_from_blobs( replay_buffer, &blobs[0..blobs.len()-1], read_sum )
+    if read_sum < record_buffer.max_length {
+        add_samples_from_blobs( record_buffer, &blobs[0..blobs.len()-1], read_sum )
     }
 
-    replay_buffer.append( samples );
-    replay_buffer.last_sample_blob = Some(blobs.last().unwrap().clone());
+    record_buffer.append( samples );
+    record_buffer.last_sample_blob = Some(blobs.last().unwrap().clone());
 }
 
-fn train( optimizer:&mut Optimizer, net:&Box<dyn DualNetwork>, replay_buffer:&ReplayBuffer, epoch_num:usize ) {
-    eprintln!("train for replay buffer size: {}", replay_buffer.len());
+fn train( optimizer:&mut Optimizer, net:&Box<dyn DualNetwork>, record_buffer:&RecordBuffer, epoch_num:usize ) {
+    eprintln!("train for record buffer size: {}", record_buffer.len());
 
     let mut start = Instant::now();
 
     for epoch in 0..epoch_num {
-        let (p,v) = net.forward_t(&replay_buffer.states,true);
-        let (loss,p_loss,v_loss) = loss_alphazero(&p, &replay_buffer.policies, &v, &replay_buffer.values);
+        let (p,v) = net.forward_t(&record_buffer.states,true);
+        let (loss,p_loss,v_loss) = loss_alphazero(&p, &record_buffer.policies, &v, &record_buffer.values);
         optimizer.backward_step(&loss);
 
         let now = Instant::now();
@@ -181,16 +181,16 @@ fn export_weights( mysql_pool:&Arc<Mutex<Pool>>, vs:&VarStore, network_type:&Net
     tx.commit()
 }
 
-fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, replay_buffer:&mut ReplayBuffer, optimizer:&mut Optimizer, vs:&VarStore, net:&Box<dyn DualNetwork>, network_type:&NetworkType, epoch:usize ) {
+fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, record_buffer:&mut RecordBuffer, optimizer:&mut Optimizer, vs:&VarStore, net:&Box<dyn DualNetwork>, network_type:&NetworkType, epoch:usize ) {
     eprintln!("enumerate sample files from mysql...");
-    let sample_blobs = get_new_samples( mysql_pool, &replay_buffer.last_sample_blob ).unwrap();
+    let sample_blobs = get_new_samples( mysql_pool, &record_buffer.last_sample_blob ).unwrap();
 
     eprintln!("download samples...");
-    add_samples_from_blobs( replay_buffer, &sample_blobs, 0 );
+    add_samples_from_blobs( record_buffer, &sample_blobs, 0 );
 
-    if !replay_buffer.is_empty() {
+    if !record_buffer.is_empty() {
         // バッファに何かあるなら学習して出力します。
-        train( optimizer, net, replay_buffer, epoch );
+        train( optimizer, net, record_buffer, epoch );
         export_weights( &mysql_pool, vs, network_type ).unwrap();
     }
     else if !is_exist_model(mysql_pool).unwrap() {
@@ -221,7 +221,7 @@ pub fn run( param:&LearnerParameter ) {
     eprintln!("device: {:?}", device);
 
     // ここから学習のデータ構造作成
-    let mut replay_buffer = ReplayBuffer::new(device, param.replay_buffer_size);
+    let mut record_buffer = RecordBuffer::new(device, param.record_buffer_size);
 
     loop {
         // 理由が分からないですが、このあたりをループの中に入れてあげると実行速度を維持できるので、現状このようにしています。
@@ -240,6 +240,6 @@ pub fn run( param:&LearnerParameter ) {
         let mut optimizer = adam_opt.build(&vs, 1e-3).unwrap();
         // ↑↑↑ここまで
 
-        run_epoch_loop( &mysql_pool, &mut replay_buffer, &mut optimizer, &vs, &net, &param.network_type, param.epochs_per_write );
+        run_epoch_loop( &mysql_pool, &mut record_buffer, &mut optimizer, &vs, &net, &param.network_type, param.epochs_per_write );
     }
 }

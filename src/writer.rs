@@ -17,8 +17,8 @@ use super::logic::Setting;
 // Trait
 ////////////////////////////////////////////////////////////////////////////////
 
-pub trait WriteReplay {
-    fn write_replay(&mut self, replay:Replay) -> Result<()>;
+pub trait WriteRecord {
+    fn write_record(&mut self, record:Record) -> Result<()>;
     fn flush(&mut self) -> Result<()>;
 }
 
@@ -29,7 +29,7 @@ pub trait WriteReplay {
 pub struct EvaluationWriter {
     mysql_pool : Arc<Mutex<Pool>>,
     plays_per_write : usize,
-    buffer : Vec<Replay>,
+    buffer : Vec<Record>,
 }
 
 impl EvaluationWriter {
@@ -54,25 +54,25 @@ impl EvaluationWriter {
 // という説明で問題がだいたい理解できると思います。
 // ロックを纏めて取るのではなく行ロックで１個ずつ確保してしまうから、
 // どこかでデッドロックしてしまうわけです。
-fn aggregate_replays( replays:&Vec<Replay> ) -> BTreeMap<String,(f64,usize)> {
+fn aggregate_records( records:&Vec<Record> ) -> BTreeMap<String,(f64,usize)> {
     let mut ret = BTreeMap::new();
 
-    for replay in replays {
-        let (reward,count) = ret.entry(replay.name.clone()).or_insert((0.0,0));
-        *reward += replay.reward as f64;
+    for record in records {
+        let (reward,count) = ret.entry(record.name.clone()).or_insert((0.0,0));
+        *reward += record.reward as f64;
         *count += 1;
     }
 
     return ret;
 }
 
-fn write_replay_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, buf:&Vec<Replay> ) {
+fn write_record_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, buf:&Vec<Record> ) {
     // リプレイデータの打ち上げ
     {
         let encoded: Vec<u8> = bincode::serialize(&buf).unwrap();
 
         {
-            let file = std::fs::File::create("replay.bincode.bz2").unwrap();
+            let file = std::fs::File::create("record.bincode.bz2").unwrap();
             let mut writer = BzEncoder::new(BufWriter::new(file), Compression::best());
             writer.write_all(&encoded).unwrap();
         }
@@ -82,8 +82,8 @@ fn write_replay_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, buf:&Vec<Replay> ) {
 
         // ファイルの打ち上げ
         eprintln!("{} Uploading...", ulid);
-        let destination_path = format!("replay/{}.bz2", ulid);
-        match upload("replay.bincode.bz2",&destination_path,"application/x-bzip2") {
+        let destination_path = format!("record/{}.bz2", ulid);
+        match upload("record.bincode.bz2",&destination_path,"application/x-bzip2") {
             Ok(()) => eprintln!("{} Done.", ulid),
             Err(x) => eprintln!("{} {}", ulid, x),
         }
@@ -94,7 +94,7 @@ fn write_replay_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, buf:&Vec<Replay> ) {
         let mut conn = mysql_pool.lock().unwrap().get_conn().unwrap();
         let mut tx = conn.start_transaction(TxOpts::default()).unwrap();
 
-        let sum = aggregate_replays(&buf);
+        let sum = aggregate_records(&buf);
 
         eprintln!("Update evaluations... {:?}", sum);
 
@@ -113,12 +113,12 @@ fn write_replay_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, buf:&Vec<Replay> ) {
     }
 }
 
-impl WriteReplay for EvaluationWriter {
-    fn write_replay(&mut self, replay:Replay) -> Result<()> {
-        self.buffer.push(replay);
+impl WriteRecord for EvaluationWriter {
+    fn write_record(&mut self, record:Record) -> Result<()> {
+        self.buffer.push(record);
 
         if self.buffer.len() >= self.plays_per_write {
-            write_replay_flush_buffer( &self.mysql_pool, &self.buffer );
+            write_record_flush_buffer( &self.mysql_pool, &self.buffer );
             self.buffer.clear();
         }
 
@@ -127,7 +127,7 @@ impl WriteReplay for EvaluationWriter {
 
     fn flush(&mut self) -> Result<()> {
         if self.buffer.len() > 0 {
-            write_replay_flush_buffer( &self.mysql_pool, &self.buffer );
+            write_record_flush_buffer( &self.mysql_pool, &self.buffer );
             self.buffer.clear();
         }
 
@@ -143,7 +143,7 @@ pub struct GenerationWriter {
     mysql_pool : Arc<Mutex<Pool>>,
     setting : Setting,
     plays_per_write : usize,
-    buffer : Vec<Replay>,
+    buffer : Vec<Record>,
 }
 
 impl GenerationWriter {
@@ -157,8 +157,8 @@ impl GenerationWriter {
     }
 }
 
-fn write_samples<W:Write,F:Formatter>( writer:&mut W, formatter:&F, replay:&Replay) -> Result<()> {
-    for x in formatter.format(&replay) {
+fn write_samples<W:Write,F:Formatter>( writer:&mut W, formatter:&F, record:&Record) -> Result<()> {
+    for x in formatter.format(&record) {
         writer.write_all(x.as_bytes())?;
         writer.write_all(&['\n' as u8])?;
     }
@@ -166,13 +166,13 @@ fn write_samples<W:Write,F:Formatter>( writer:&mut W, formatter:&F, replay:&Repl
     Ok(())
 }
 
-fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, setting:&Setting, buf:&Vec<Replay> ) {
+fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, setting:&Setting, buf:&Vec<Record> ) {
 
     // アップロードするファイル名を決定します
     let ulid = Ulid::new().to_string();
 
     // ファイルに全部書き込み
-    eprintln!("{} Output replays...", ulid);
+    eprintln!("{} Output records...", ulid);
 
     {
         let file = std::fs::File::create("sample.txt.bz2").unwrap();
@@ -204,9 +204,9 @@ fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, setting:&Setting, b
     }
 }
 
-impl WriteReplay for GenerationWriter {
-    fn write_replay(&mut self, replay:Replay) -> Result<()> {
-        self.buffer.push(replay);
+impl WriteRecord for GenerationWriter {
+    fn write_record(&mut self, record:Record) -> Result<()> {
+        self.buffer.push(record);
 
         if self.buffer.len() >= self.plays_per_write {
             write_samples_flush_buffer( &self.mysql_pool, &self.setting, &self.buffer );

@@ -26,7 +26,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            python3 -u pysrc/simulator.py learner --epochs-per-write 300 --replay-buffer-size 80000 --network-type=residual-4
+            python3 -u pysrc/simulator.py learner --epochs-per-write 300 --record-buffer-size 80000 --network-type=residual-4
         resources:
           requests:
             cpu: "4"

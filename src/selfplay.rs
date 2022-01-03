@@ -55,7 +55,7 @@ pub struct Sample {
 }
 
 #[derive(Serialize)]
-pub struct Replay {
+pub struct Record {
     pub samples : Vec<Sample>,
     pub name : String,
     pub last_state : State,
@@ -66,17 +66,17 @@ struct ThreadContext {
     episode_param : EpisodeParameter,
     batch_size : usize,
     selfplay_receiver : Receiver<(String,Arc<(NetworkType,tch::nn::VarStore)>)>,
-    writer_sender : Sender<Replay>,
+    writer_sender : Sender<Record>,
 }
 
 struct CoroutineContext {
     episode_param : EpisodeParameter,
-    writer_sender : Sender<Replay>,
+    writer_sender : Sender<Record>,
     predict_queue : PredictQueue,
     graph_info : RefCell<(String,Arc<(NetworkType,tch::nn::VarStore)>)>, // CellはCopy traitを要求します。StringもArcもCloneが無いのでRefCellが必要であるようです
 }
 
-async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, predict_queue:&PredictQueue ) -> Replay {
+async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, predict_queue:&PredictQueue ) -> Record {
 
     let seed : u64 = From::from( SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Failed to get UNIXTIME").subsec_nanos() );
     let seeds = [seed, seed];
@@ -108,14 +108,14 @@ async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, pre
     let reward = get_reward(&state,&modifier.setting);
 
     // 結果を返す
-    Replay { samples:samples, name:graph_filename.clone(), last_state:state, reward:reward }
+    Record { samples:samples, name:graph_filename.clone(), last_state:state, reward:reward }
 }
 
 async fn selfplay_coroutine( co_ctx:Rc<CoroutineContext> ) {
     loop {
         let (graph_filename,_) = co_ctx.graph_info.borrow().clone();
-        let replay = selfplay_craftone(&co_ctx.episode_param, &graph_filename, &co_ctx.predict_queue);
-        co_ctx.writer_sender.send(replay.await).unwrap();
+        let record = selfplay_craftone(&co_ctx.episode_param, &graph_filename, &co_ctx.predict_queue);
+        co_ctx.writer_sender.send(record.await).unwrap();
     }
 }
 
@@ -166,7 +166,7 @@ fn selfplay_thread( ctx:ThreadContext ) {
 }
 
 // 戻り値の型は利用者側の都合でVecのタプルで返したほうが良いと思います
-fn spawn_selfplay_threads( episode_param:&EpisodeParameter, writer_sender:&Sender<Replay>, thread_num:u32, batch_size:usize ) -> (Vec<JoinHandle<()>>,Vec<Sender<(String,Arc<(NetworkType,tch::nn::VarStore)>)>>) {
+fn spawn_selfplay_threads( episode_param:&EpisodeParameter, writer_sender:&Sender<Record>, thread_num:u32, batch_size:usize ) -> (Vec<JoinHandle<()>>,Vec<Sender<(String,Arc<(NetworkType,tch::nn::VarStore)>)>>) {
     let mut handles = vec![];
     let mut senders = vec![];
     for thread_id in 0..thread_num {
@@ -192,26 +192,26 @@ fn wait_threads(handles:Vec<JoinHandle<()>>) {
     }
 }
 
-fn write_replays<W:WriteReplay>( mut writer:W, receiver:Receiver<Replay> ) {
+fn write_records<W:WriteRecord>( mut writer:W, receiver:Receiver<Record> ) {
 
     let start = Instant::now();
     let interval = Duration::new(5,0);
     let mut next_time = start + interval;
-    let mut replay_count = 0;
+    let mut record_count = 0;
     let mut sample_count = 0;
 
-    while let Ok(replay) = receiver.recv() {
-        replay_count += 1;
-        sample_count += replay.samples.len();
+    while let Ok(record) = receiver.recv() {
+        record_count += 1;
+        sample_count += record.samples.len();
 
-        writer.write_replay(replay).unwrap();
+        writer.write_record(record).unwrap();
 
         let now = Instant::now();
         if now >= next_time {
             let duration = now - start;
             let secs = duration.as_millis() as f64 / 1000.0;
-            eprintln!("{:.3}[secs] {}[replays] {}[samples] {:.3}[replays/secs] {:.3}[samples/sec]",
-                secs, replay_count, sample_count, replay_count as f64 / secs, sample_count as f64 / secs );
+            eprintln!("{:.3}[secs] {}[records] {}[samples] {:.3}[records/secs] {:.3}[samples/sec]",
+                secs, record_count, sample_count, record_count as f64 / secs, sample_count as f64 / secs );
             next_time += interval;
         }
     }
@@ -219,10 +219,10 @@ fn write_replays<W:WriteReplay>( mut writer:W, receiver:Receiver<Replay> ) {
     writer.flush().unwrap();
 }
 
-fn write_thread( mysql_pool:Arc<Mutex<Pool>>, param:SelfPlayParameter, receiver:Receiver<Replay> ) {
+fn write_thread( mysql_pool:Arc<Mutex<Pool>>, param:SelfPlayParameter, receiver:Receiver<Record> ) {
     match &param.writer_param {
-        WriterParameter::Evaluation => write_replays( EvaluationWriter::new( mysql_pool, param.plays_per_write ), receiver ),
-        WriterParameter::Generation => write_replays( GenerationWriter::new( mysql_pool, param.plays_per_write, param.episode_param.setting.clone() ), receiver ),
+        WriterParameter::Evaluation => write_records( EvaluationWriter::new( mysql_pool, param.plays_per_write ), receiver ),
+        WriterParameter::Generation => write_records( GenerationWriter::new( mysql_pool, param.plays_per_write, param.episode_param.setting.clone() ), receiver ),
     };
 }
 

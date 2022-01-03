@@ -1,10 +1,10 @@
 ﻿
-use super::selfplay::{Sample,Replay};
+use super::selfplay::{Sample,Record};
 use super::logic::Setting;
 use super::network::encode_state;
 
 pub trait Formatter {
-    fn format(&self, replay:&Replay) -> Vec<String>;
+    fn format(&self, record:&Record) -> Vec<String>;
 }
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ fn export_by_tsv(s:&Sample, setting:&Setting, reward:f32) -> String {
 }
 
 impl Formatter for TsvFormatter {
-    fn format(&self, replay:&Replay) -> Vec<String> {
-        replay.samples.iter().map(|x| export_by_tsv(&x, &self.setting, replay.reward)).collect()
+    fn format(&self, record:&Record) -> Vec<String> {
+        record.samples.iter().map(|x| export_by_tsv(&x, &self.setting, record.reward)).collect()
     }
 }
