@@ -1,13 +1,13 @@
 ﻿
 extern crate xorshift;
 
-use serde::Serialize;
+use serde::{Serialize,Deserialize};
 use std::cmp::min;
 use std::hash::Hash;
 use xorshift::{Rng,Xorshift128};
 use num::traits::{FromPrimitive,ToPrimitive};
 
-#[derive(Debug,Clone,Copy,PartialEq,Eq,Serialize,Hash)]
+#[derive(Debug,Clone,Copy,PartialEq,Eq,Serialize,Deserialize,Hash)]
 pub enum Condition
 {
     Standard,       // 通常
@@ -20,7 +20,7 @@ pub enum Condition
 
 pub const ACTION_NUM: usize = 32;
 
-#[derive(Debug,Clone,Serialize,PartialEq)]
+#[derive(Debug,Clone,Serialize,Deserialize,PartialEq)]
 pub enum Action {
     BasicSynthesis,     // 作業
     BasicTouch,         // 加工
@@ -57,7 +57,7 @@ pub enum Action {
 //  TrainedEye,         // 匠の早業(非対応)
 }
 
-#[derive(Debug,Clone,Serialize,PartialEq,Eq,Hash)]
+#[derive(Debug,Clone,Serialize,Deserialize,PartialEq,Eq,Hash)]
 pub struct State
 {
     pub turn : u32,                   // ターン

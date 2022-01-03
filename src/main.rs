@@ -15,6 +15,7 @@ mod learner;
 mod benchmark;
 mod executor;
 mod predictor;
+mod replay;
 
 use logic::Setting;
 use argh::FromArgs;
@@ -38,6 +39,7 @@ enum SubCommand {
     Generator(SubCommandGenerator),
     Learner(SubCommandLearner),
     Benchmark(SubCommandBenchmark),
+    Replay(SubCommandReplay),
     Cui(SubCommandCui),
 }
 
@@ -145,6 +147,13 @@ struct SubCommandBenchmark {
 
     #[argh(option, default="16384", description="plays per write")]
     plays_per_write:usize,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name="replay", description="replay record")]
+struct SubCommandReplay {
+    #[argh(positional, description="record name")]
+    record_name: String
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -269,6 +278,10 @@ fn cmd_benchmark( args:SubCommandBenchmark ) {
     benchmark::run_benchmark(param);
 }
 
+fn cmd_replay( args: SubCommandReplay ) {
+    replay::run_replay( args.record_name );
+}
+
 fn cmd_cui( _args:SubCommandCui ) {
     cui::run_cui();
 }
@@ -281,6 +294,7 @@ fn main() {
         SubCommand::Generator(x) => cmd_generator(x),
         SubCommand::Learner(x) => cmd_learner(x),
         SubCommand::Benchmark(x) => cmd_benchmark(x),
+        SubCommand::Replay(x) => cmd_replay(x),
         SubCommand::Cui(x) => cmd_cui(x),
     }
 }

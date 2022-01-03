@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use mysql::*;
-use serde::Serialize;
+use serde::{Serialize,Deserialize};
 use xorshift::{SeedableRng};
 
 use super::selector::{Selector,UCB1Context};
@@ -47,14 +47,14 @@ pub struct SelfPlayParameter {
     pub writer_param : WriterParameter,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize,Deserialize,Debug)]
 pub struct Sample {
     pub action : Action, // 無くても問題ないけどログ見るのに便利なので出しておく
     pub state : State,
     pub mcts_policy : ActionVector,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize,Deserialize,Debug)]
 pub struct Record {
     pub samples : Vec<Sample>,
     pub name : String,
