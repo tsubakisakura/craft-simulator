@@ -5,8 +5,7 @@ use bzip2::read::BzDecoder;
 use super::selfplay::*;
 use super::gcs::*;
 
-pub fn run_replay( record_name:String ) {
-
+fn get_records( record_name: String ) -> Vec<Record> {
     println!("{} Downloading...", record_name);
 
     // レコード取得
@@ -23,7 +22,10 @@ pub fn run_replay( record_name:String ) {
     reader.read_to_end(&mut serialized).unwrap();
 
     // デシリアライズ
-    let records : Vec<Record> = bincode::deserialize(&serialized).unwrap();
+    bincode::deserialize(&serialized).unwrap()
+}
 
+pub fn run_replay( record_name:String ) {
+    let records = get_records(record_name);
     println!("{:?}", records );
 }
