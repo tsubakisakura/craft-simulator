@@ -26,8 +26,9 @@ fn get_records( record_name: String ) -> Vec<Record> {
     bincode::deserialize(&serialized).unwrap()
 }
 
-const HEADER: [&str; 16] = [
+const HEADER: [&str; 17] = [
     "TURN",
+    "時間",
     "作業",
     "品質",
     "耐久",
@@ -46,8 +47,9 @@ const HEADER: [&str; 16] = [
 ];
 
 fn format_state( s:&State ) -> String {
-    format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+    format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
         s.turn,
+        s.time,
         s.working,
         s.quality,
         s.durability,
