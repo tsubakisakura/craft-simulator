@@ -67,25 +67,50 @@ fn aggregate_replays( replays:&Vec<Replay> ) -> BTreeMap<String,(f64,usize)> {
 }
 
 fn write_replay_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, buf:&Vec<Replay> ) {
-    let mut conn = mysql_pool.lock().unwrap().get_conn().unwrap();
-    let mut tx = conn.start_transaction(TxOpts::default()).unwrap();
+    // リプレイデータの打ち上げ
+    {
+        let encoded: Vec<u8> = bincode::serialize(&buf).unwrap();
 
-    let sum = aggregate_replays(&buf);
+        {
+            let file = std::fs::File::create("replay.bincode.bz2").unwrap();
+            let mut writer = BzEncoder::new(BufWriter::new(file), Compression::best());
+            writer.write_all(&encoded).unwrap();
+        }
 
-    eprintln!("Update evaluations... {:?}", sum);
+        // アップロードするファイル名を決定します
+        let ulid = Ulid::new().to_string();
 
-    tx.exec_batch(
-        "INSERT INTO evaluation (name, total_reward, total_count) VALUES (:name, :reward, :count) \
-        ON DUPLICATE KEY UPDATE total_reward=total_reward+VALUES(total_reward), total_count=total_count+VALUES(total_count)",
-        sum.iter().map(|(k,(reward,count))| params! {"name" => k.clone(), "reward" => reward, "count" => count})
-    ).unwrap();
+        // ファイルの打ち上げ
+        eprintln!("{} Uploading...", ulid);
+        let destination_path = format!("replay/{}.bz2", ulid);
+        match upload("replay.bincode.bz2",&destination_path,"application/x-bzip2") {
+            Ok(()) => eprintln!("{} Done.", ulid),
+            Err(x) => eprintln!("{} {}", ulid, x),
+        }
+    }
 
-    tx.exec_batch(
-        "INSERT INTO episode (name, reward, quality, turn) VALUES (:name, :reward, :quality, :turn)",
-        buf.iter().map(|x| params! {"name" => x.name.clone(), "reward" => x.reward, "quality" => x.last_state.quality, "turn" => x.last_state.turn - 1 })
-    ).unwrap();
+    // mysqlに評価の書き込み
+    {
+        let mut conn = mysql_pool.lock().unwrap().get_conn().unwrap();
+        let mut tx = conn.start_transaction(TxOpts::default()).unwrap();
 
-    tx.commit().unwrap();
+        let sum = aggregate_replays(&buf);
+
+        eprintln!("Update evaluations... {:?}", sum);
+
+        tx.exec_batch(
+            "INSERT INTO evaluation (name, total_reward, total_count) VALUES (:name, :reward, :count) \
+            ON DUPLICATE KEY UPDATE total_reward=total_reward+VALUES(total_reward), total_count=total_count+VALUES(total_count)",
+            sum.iter().map(|(k,(reward,count))| params! {"name" => k.clone(), "reward" => reward, "count" => count})
+        ).unwrap();
+
+        tx.exec_batch(
+            "INSERT INTO episode (name, reward, quality, turn) VALUES (:name, :reward, :quality, :turn)",
+            buf.iter().map(|x| params! {"name" => x.name.clone(), "reward" => x.reward, "quality" => x.last_state.quality, "turn" => x.last_state.turn - 1 })
+        ).unwrap();
+
+        tx.commit().unwrap();
+    }
 }
 
 impl WriteReplay for EvaluationWriter {
