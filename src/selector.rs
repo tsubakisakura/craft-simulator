@@ -9,6 +9,7 @@ use super::network2::*;
 pub enum Selector {
     UCB1(f64),
     Optimistic(usize),
+    Greedy(usize),
 }
 
 #[derive(Clone)]
@@ -71,6 +72,18 @@ fn get_optimistic_model(conn:&mut PooledConn , n:usize) -> std::result::Result<S
     }
 }
 
+fn get_greedy_model(conn:&mut PooledConn, threshold:usize) -> std::result::Result<String,Error> {
+    // 1個だけ取得してその結果を返します。ここでvalueは取る必要ない
+    let res : Option<(String,f64)> = conn.query_first(format!("SELECT name, total_reward/total_count as value FROM evaluation WHERE total_count>={} ORDER BY value DESC LIMIT 1",threshold))?;
+
+    if let Some((name,_)) = res {
+        Ok(name)
+    }
+    else {
+        Err(Error::Empty)
+    }
+}
+
 pub fn get_network_type(conn:&mut PooledConn, name:&str) -> std::result::Result<NetworkType,Error> {
     let res : Option<String> = conn.exec_first("SELECT type FROM network WHERE name=:name", params!{"name"=>name} )?;
 
@@ -96,6 +109,7 @@ impl UCB1Context {
         let model_name = match *selector {
             Selector::UCB1(x) => get_ucb1_model(&mut conn, x)?,
             Selector::Optimistic(x) => get_optimistic_model(&mut conn, x)?,
+            Selector::Greedy(x) => get_greedy_model(&mut conn, x)?,
         };
 
         let network_type = get_network_type(&mut conn, &model_name)?;

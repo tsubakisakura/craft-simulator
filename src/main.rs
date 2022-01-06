@@ -64,6 +64,9 @@ struct SubCommandEvaluator {
     #[argh(option, description="use optimistic selector")]
     optimistic:Option<usize>,
 
+    #[argh(option, description="use greedy selector")]
+    greedy:Option<usize>,
+
     #[argh(option, default="1", description="torch parallelism thread num")]
     tch_thread_num:u32,
 
@@ -106,6 +109,9 @@ struct SubCommandGenerator {
 
     #[argh(option, description="use optimistic selector")]
     optimistic:Option<usize>,
+
+    #[argh(option, description="use greedy selector")]
+    greedy:Option<usize>,
 
     #[argh(option, default="1", description="torch parallelism thread num")]
     tch_thread_num:u32,
@@ -177,15 +183,18 @@ fn initial_setting() -> Setting {
     }
 }
 
-fn get_selector( ucb1:Option<f64>, optimistic:Option<usize> ) -> Selector {
+fn get_selector( ucb1:Option<f64>, optimistic:Option<usize>, greedy:Option<usize> ) -> Option<Selector> {
     if let Some(x) = ucb1 {
-        Selector::UCB1(x)
+        Some(Selector::UCB1(x))
     }
     else if let Some(x) = optimistic {
-        Selector::Optimistic(x)
+        Some(Selector::Optimistic(x))
+    }
+    else if let Some(x) = greedy {
+        Some(Selector::Greedy(x))
     }
     else {
-        Selector::Optimistic(10)
+        None
     }
 }
 
@@ -207,7 +216,7 @@ fn cmd_evaluator( args:SubCommandEvaluator ) {
             eps:0.0,
             start_greedy_turn:0,
         },
-        selector:get_selector(args.ucb1, args.optimistic),
+        selector:get_selector(args.ucb1, args.optimistic, args.greedy).unwrap_or(Selector::Optimistic(10)),
         plays_per_write:args.plays_per_write,
         thread_num:args.thread_num,
         batch_size:args.batch_size,
@@ -234,7 +243,7 @@ fn cmd_generator( args:SubCommandGenerator ) {
             eps:args.eps,
             start_greedy_turn:args.start_greedy_turn,
         },
-        selector:get_selector(args.ucb1, args.optimistic),
+        selector:get_selector(args.ucb1, args.optimistic, args.greedy).unwrap_or(Selector::Greedy(50)),
         plays_per_write:args.plays_per_write,
         thread_num:args.thread_num,
         batch_size:args.batch_size,
