@@ -7,14 +7,14 @@ use super::selfplay::*;
 use super::gcs::*;
 
 fn get_records( record_name: String ) -> Vec<Record> {
-    println!("{} Downloading...", record_name);
+    eprintln!("{} Downloading...", record_name);
 
     // レコード取得
     let path = format!("record/{}.bz2", record_name);
     std::fs::create_dir_all("record").unwrap();
     download(&path,&path).unwrap();
 
-    println!("{} Done.", record_name);
+    eprintln!("{} Done.", record_name);
 
     // デコード
     let file = std::fs::File::open(&path).unwrap();
@@ -76,10 +76,12 @@ fn write_record( record: &Record ) {
     }
 }
 
-pub fn run_replay( record_name:String ) {
-    let records = get_records(record_name);
+pub fn run_replay( record_names:Vec<String> ) {
+    for record_name in record_names {
+        let records = get_records(record_name);
 
-    for record in records {
-        write_record( &record );
+        for record in records {
+            write_record( &record );
+        }
     }
 }

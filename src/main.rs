@@ -159,7 +159,7 @@ struct SubCommandBenchmark {
 #[argh(subcommand, name="replay", description="replay record")]
 struct SubCommandReplay {
     #[argh(positional, description="record name")]
-    record_name: String
+    record_names: Vec<String>
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -288,7 +288,7 @@ fn cmd_benchmark( args:SubCommandBenchmark ) {
 }
 
 fn cmd_replay( args: SubCommandReplay ) {
-    replay::run_replay( args.record_name );
+    replay::run_replay( args.record_names );
 }
 
 fn cmd_cui( _args:SubCommandCui ) {
