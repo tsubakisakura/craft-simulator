@@ -101,7 +101,7 @@ struct SubCommandGenerator {
     #[argh(option, default="0.3", description="dirichlet noise epsilon(0 for no noise)")]
     eps:f32,
 
-    #[argh(option, default="10", description="start greety algorithm turn")]
+    #[argh(option, default="30", description="start greety algorithm turn")]
     start_greedy_turn:u32,
 
     #[argh(option, description="use ucb1 selector")]
