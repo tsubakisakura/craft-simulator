@@ -27,7 +27,6 @@ pub enum Action {
     MastersMend,        // マスターズメンド
     HastyTouch,         // ヘイスティタッチ
     RapidSynthesis,     // 突貫作業
-    InnerQuiet,         // インナークワイエット
     Observe,            // 経過観察
     TricksOfTheTrade,   // 秘訣
     WasteNot,           // 倹約
@@ -35,8 +34,6 @@ pub enum Action {
     StandardTouch,      // 中級加工
     GreatStrides,       // グレートストライド
     Innovation,         // イノベーション
-    NameOfTheElements,  // アートオブエレメンタル
-    BrandOfTheElements, // ブランドオブエレメンタル
     FinalAppraisal,     // 最終確認
     WasteNot2,          // 長期倹約
     ByregotsBlessing,   // ビエルゴの祝福
@@ -44,7 +41,6 @@ pub enum Action {
     MuscleMemory,       // 確信
     CarefulObservation, // 設計変更
     CarefulSynthesis,   // 模範作業
-    PatientTouch,       // 専心加工
     Manipulation,       // マニピュレーション
     PrudentTouch,       // 倹約加工
     FocusedSynthesis,   // 注視作業
@@ -54,7 +50,10 @@ pub enum Action {
     Groundwork,         // 下地作業
     DelicateSynthesis,  // 精密作業
     IntensiveSynthesis, // 集中作業
-//  TrainedEye,         // 匠の早業(非対応)
+    AdvancedTouch,      // 上級加工
+    HeartAndSoul,       // 一心不乱
+    PrudentSynthesis,   // 倹約作業
+    TrainedFinesse,     // 匠の神業
 }
 
 #[derive(Debug,Clone,Serialize,Deserialize,PartialEq,Eq,Hash)]
@@ -73,12 +72,13 @@ pub struct State
     pub veneration : u32,             // 残ヴェネレーション
     pub great_strides : u32,          // 残グレートストライド
     pub innovation : u32,             // 残イノベーション
-    pub elements : u32,               // 残アートオブエレメンタル
     pub final_appraisal : u32,        // 残最終確認
     pub muscle_memory : u32,          // 残確信
     pub manipulation : u32,           // マニピュレーション
-    pub elements_used : bool,         // アートオブエレメンタルを使用済みかどうか
-    pub combo_touch : bool,           // 直前に加工したかどうか
+    pub heart_and_soul : bool,        // 一心不乱有効
+    pub heart_and_soul_used : bool,   // 一心不乱を使用済みかどうか
+    pub combo_basic_touch : bool,     // 直前に加工したかどうか
+    pub combo_standard_touch : bool,  // 直前に中級加工したかどうか
     pub combo_observe : bool,         // 直前に経過観察したかどうか
     pub condition : Condition         // 状態
 }
@@ -121,33 +121,33 @@ impl FromPrimitive for Action {
             2 => Some(Action::MastersMend),        // マスターズメンド
             3 => Some(Action::HastyTouch),         // ヘイスティタッチ
             4 => Some(Action::RapidSynthesis),     // 突貫作業
-            5 => Some(Action::InnerQuiet),         // インナークワイエット
-            6 => Some(Action::Observe),            // 経過観察
-            7 => Some(Action::TricksOfTheTrade),   // 秘訣
-            8 => Some(Action::WasteNot),           // 倹約
-            9 => Some(Action::Veneration),         // ヴェネレーション
-            10 => Some(Action::StandardTouch),      // 中級加工
-            11 => Some(Action::GreatStrides),       // グレートストライド
-            12 => Some(Action::Innovation),         // イノベーション
-            13 => Some(Action::NameOfTheElements),  // アートオブエレメンタル
-            14 => Some(Action::BrandOfTheElements), // ブランドオブエレメンタル
-            15 => Some(Action::FinalAppraisal),     // 最終確認
-            16 => Some(Action::WasteNot2),          // 長期倹約
-            17 => Some(Action::ByregotsBlessing),   // ビエルゴの祝福
-            18 => Some(Action::PreciseTouch),       // 集中加工
-            19 => Some(Action::MuscleMemory),       // 確信
-            20 => Some(Action::CarefulObservation), // 設計変更
-            21 => Some(Action::CarefulSynthesis),   // 模範作業
-            22 => Some(Action::PatientTouch),       // 専心加工
-            23 => Some(Action::Manipulation),       // マニピュレーション
-            24 => Some(Action::PrudentTouch),       // 倹約加工
-            25 => Some(Action::FocusedSynthesis),   // 注視作業
-            26 => Some(Action::FocusedTouch),       // 注視加工
-            27 => Some(Action::Reflect),            // 真価
-            28 => Some(Action::PreparatoryTouch),   // 下地加工
-            29 => Some(Action::Groundwork),         // 下地作業
-            30 => Some(Action::DelicateSynthesis),  // 精密作業
-            31 => Some(Action::IntensiveSynthesis), // 集中作業
+            5 => Some(Action::Observe),            // 経過観察
+            6 => Some(Action::TricksOfTheTrade),   // 秘訣
+            7 => Some(Action::WasteNot),           // 倹約
+            8 => Some(Action::Veneration),         // ヴェネレーション
+            9 => Some(Action::StandardTouch),      // 中級加工
+            10 => Some(Action::GreatStrides),       // グレートストライド
+            11 => Some(Action::Innovation),         // イノベーション
+            12 => Some(Action::FinalAppraisal),     // 最終確認
+            13 => Some(Action::WasteNot2),          // 長期倹約
+            14 => Some(Action::ByregotsBlessing),   // ビエルゴの祝福
+            15 => Some(Action::PreciseTouch),       // 集中加工
+            16 => Some(Action::MuscleMemory),       // 確信
+            17 => Some(Action::CarefulObservation), // 設計変更
+            18 => Some(Action::CarefulSynthesis),   // 模範作業
+            19 => Some(Action::Manipulation),       // マニピュレーション
+            20 => Some(Action::PrudentTouch),       // 倹約加工
+            21 => Some(Action::FocusedSynthesis),   // 注視作業
+            22 => Some(Action::FocusedTouch),       // 注視加工
+            23 => Some(Action::Reflect),            // 真価
+            24 => Some(Action::PreparatoryTouch),   // 下地加工
+            25 => Some(Action::Groundwork),         // 下地作業
+            26 => Some(Action::DelicateSynthesis),  // 精密作業
+            27 => Some(Action::IntensiveSynthesis), // 集中作業
+            28 => Some(Action::AdvancedTouch),      // 上級加工
+            29 => Some(Action::HeartAndSoul),       // 一心不乱
+            30 => Some(Action::PrudentSynthesis),   // 倹約作業
+            31 => Some(Action::TrainedFinesse),     // 匠の神業
             _ => None
         }
     }
@@ -165,33 +165,33 @@ impl ToPrimitive for Action {
             Action::MastersMend => 2,
             Action::HastyTouch => 3,
             Action::RapidSynthesis => 4,
-            Action::InnerQuiet => 5,
-            Action::Observe => 6,
-            Action::TricksOfTheTrade => 7,
-            Action::WasteNot => 8,
-            Action::Veneration => 9,
-            Action::StandardTouch => 10,
-            Action::GreatStrides => 11,
-            Action::Innovation => 12,
-            Action::NameOfTheElements => 13,
-            Action::BrandOfTheElements => 14,
-            Action::FinalAppraisal => 15,
-            Action::WasteNot2 => 16,
-            Action::ByregotsBlessing => 17,
-            Action::PreciseTouch => 18,
-            Action::MuscleMemory => 19,
-            Action::CarefulObservation => 20,
-            Action::CarefulSynthesis => 21,
-            Action::PatientTouch => 22,
-            Action::Manipulation => 23,
-            Action::PrudentTouch => 24,
-            Action::FocusedSynthesis => 25,
-            Action::FocusedTouch => 26,
-            Action::Reflect => 27,
-            Action::PreparatoryTouch => 28,
-            Action::Groundwork => 29,
-            Action::DelicateSynthesis => 30,
-            Action::IntensiveSynthesis => 31,
+            Action::Observe => 5,
+            Action::TricksOfTheTrade => 6,
+            Action::WasteNot => 7,
+            Action::Veneration => 8,
+            Action::StandardTouch => 9,
+            Action::GreatStrides => 10,
+            Action::Innovation => 11,
+            Action::FinalAppraisal => 12,
+            Action::WasteNot2 => 13,
+            Action::ByregotsBlessing => 14,
+            Action::PreciseTouch => 15,
+            Action::MuscleMemory => 16,
+            Action::CarefulObservation => 17,
+            Action::CarefulSynthesis => 18,
+            Action::Manipulation => 19,
+            Action::PrudentTouch => 20,
+            Action::FocusedSynthesis => 21,
+            Action::FocusedTouch => 22,
+            Action::Reflect => 23,
+            Action::PreparatoryTouch => 24,
+            Action::Groundwork => 25,
+            Action::DelicateSynthesis => 26,
+            Action::IntensiveSynthesis => 27,
+            Action::AdvancedTouch => 28,
+            Action::HeartAndSoul => 29,
+            Action::PrudentSynthesis => 30,
+            Action::TrainedFinesse => 31,
         })
     }
 }
@@ -222,12 +222,13 @@ impl Setting {
             veneration:0,
             great_strides:0,
             innovation:0,
-            elements:0,
             final_appraisal:0,
             muscle_memory:0,
             manipulation:0,
-            elements_used:false,
-            combo_touch:false,
+            heart_and_soul:false,
+            heart_and_soul_used:false,
+            combo_basic_touch:false,
+            combo_standard_touch:false,
             combo_observe:false,
             condition:Condition::Standard,
         }
@@ -256,16 +257,13 @@ impl State {
             Action::MastersMend => 88,
             Action::HastyTouch => 0,
             Action::RapidSynthesis => 0,
-            Action::InnerQuiet => 18,
             Action::Observe => 7,
             Action::TricksOfTheTrade => 0,
             Action::WasteNot => 56,
             Action::Veneration => 18,
-            Action::StandardTouch => if self.combo_touch { 18 } else { 32 },
+            Action::StandardTouch => if self.combo_basic_touch { 18 } else { 32 },
             Action::GreatStrides => 32,
             Action::Innovation => 18,
-            Action::NameOfTheElements => 30,
-            Action::BrandOfTheElements => 8,
             Action::FinalAppraisal => 1,
             Action::WasteNot2 => 98,
             Action::ByregotsBlessing => 24,
@@ -273,16 +271,19 @@ impl State {
             Action::MuscleMemory => 6,
             Action::CarefulObservation => 0,
             Action::CarefulSynthesis => 7,
-            Action::PatientTouch => 6,
             Action::Manipulation => 96,
             Action::PrudentTouch => 25,
             Action::FocusedSynthesis => 5,
             Action::FocusedTouch => 18,
-            Action::Reflect => 24,
+            Action::Reflect => 6,
             Action::PreparatoryTouch => 40,
             Action::Groundwork => 18,
             Action::DelicateSynthesis => 32,
             Action::IntensiveSynthesis => 6,
+            Action::AdvancedTouch => if self.combo_standard_touch { 18 } else { 32 },
+            Action::HeartAndSoul => 0,
+            Action::PrudentSynthesis => 18,
+            Action::TrainedFinesse => 32,
         };
 
         // 高能率の場合は半減しますが端数切り上げなので1足します
@@ -325,11 +326,11 @@ impl State {
             waste_not: decrement_clip(self.waste_not),
             great_strides: decrement_clip(self.great_strides),
             innovation: decrement_clip(self.innovation),
-            elements: decrement_clip(self.elements),
             final_appraisal: decrement_clip(self.final_appraisal),
             muscle_memory: decrement_clip(self.muscle_memory),
             manipulation: decrement_clip(self.manipulation),
-            combo_touch: false,
+            combo_basic_touch: false,
+            combo_standard_touch: false,
             combo_observe: false,
             .. *self
         }
@@ -354,12 +355,6 @@ impl State {
         return ( q * cond_rate * efficiency * buff_rate ) as u32;
     }
 
-    // アートオブエレメンタル時のブランドオブエレメンタルの効率計算
-    fn elements_efficiency(&self, setting:&Setting) -> u32 {
-        let t = self.working as f32 / setting.max_working as f32;
-        (102.0 + (1.0-t) * 198.0) as u32
-    }
-
     // 効率に対する品質報酬
     // こちらの記事が紹介しているcalculatorの内容を参考にしています。
     // https://jp.finalfantasyxiv.com/lodestone/character/29523439/blog/4641394/
@@ -369,7 +364,7 @@ impl State {
         let process_accuracy : f64 = From::from(setting.process_accuracy);
         let required_process_accuracy : f64 = From::from(setting.required_process_accuracy);
 
-        let f = if self.inner_quiet == 0 { process_accuracy } else { process_accuracy + process_accuracy * ((inner_quiet-1.0) * 20.0 / 100.0) };
+        let f = process_accuracy + process_accuracy * (inner_quiet * 20.0 / 100.0);
         let q1 = f*35.0/100.0 + 35.0;
         let q2 = q1 * (f + 10000.0) / (required_process_accuracy + 10000.0);
         let q3 = q2 * 60.0 / 100.0;
@@ -395,15 +390,6 @@ impl State {
         }
     }
 
-    fn add_working_elements(&self, setting:&Setting) -> State {
-        if self.elements == 0 {
-            self.add_working(&setting, 1.0)
-        }
-        else {
-            self.add_working(&setting, self.elements_efficiency(&setting) as f64 / 100.0)
-        }
-    }
-
     fn add_quality_base(&self, setting:&Setting, efficiency:f64) -> State {
         State {
             quality: min(self.quality + self.quality_reward(&setting,efficiency), setting.max_quality),
@@ -414,14 +400,7 @@ impl State {
 
     fn add_inner_quiet(&self, inner_quiet_stack:u32) -> State {
         State {
-            inner_quiet: if self.inner_quiet == 0 { 0 } else { min(self.inner_quiet+inner_quiet_stack,11) },
-            .. *self
-        }
-    }
-
-    fn sub_inner_quiet(&self, inner_quiet_stack:u32) -> State {
-        State {
-            inner_quiet: self.inner_quiet - inner_quiet_stack,
+            inner_quiet: min(self.inner_quiet+inner_quiet_stack,10),
             .. *self
         }
     }
@@ -439,7 +418,7 @@ impl State {
     }
 
     fn add_quality_byregots(&self, setting:&Setting) -> State {
-        self.add_quality_base(&setting,1.0 + (self.inner_quiet-1) as f64 * 0.2).set_inner_quiet(0)
+        self.add_quality_base(&setting,1.0 + self.inner_quiet as f64 * 0.2).set_inner_quiet(0)
     }
 
     fn consume_careful_observation(&self) -> State {
@@ -490,10 +469,6 @@ impl State {
         State { veneration: self.duration(dur), .. *self }
     }
 
-    fn set_elements(&self, dur:u32) -> State {
-        State { elements: self.duration(dur), elements_used:true, .. *self }
-    }
-
     fn set_final_appraisal(&self, dur:u32) -> State {
         State { final_appraisal: self.duration(dur), .. *self }
     }
@@ -502,8 +477,16 @@ impl State {
         State { muscle_memory: self.duration(dur), .. *self }
     }
 
-    fn set_combo_touch(&self) -> State {
-        State { combo_touch: true, .. *self }
+    fn set_heart_and_soul(&self) -> State {
+        State { heart_and_soul: true, heart_and_soul_used: true, .. *self }
+    }
+
+    fn set_combo_basic_touch(&self) -> State {
+        State { combo_basic_touch: true, .. *self }
+    }
+
+    fn set_combo_standard_touch(&self) -> State {
+        State { combo_standard_touch: true, .. *self }
     }
 
     fn set_combo_observe(&self) -> State {
@@ -511,24 +494,32 @@ impl State {
     }
 
     fn clear_combo(&self) -> State {
-        State { combo_observe: false, combo_touch: false, .. *self }
+        State { combo_observe: false, combo_basic_touch: false, combo_standard_touch: false, .. *self }
+    }
+
+    fn clear_heart_and_soul(&self) -> State {
+        if self.condition == Condition::HighQuality {
+            self.clone()
+        }
+        else {
+            State { heart_and_soul: false, .. *self }
+        }
     }
 
     // 実行確認
     pub fn check_action(&self, a:&Action) -> bool {
         if self.cp >= self.get_required_cp(&a) {
             match a {
-                Action::InnerQuiet => self.inner_quiet == 0,
-                Action::TricksOfTheTrade => self.condition == Condition::HighQuality,
-                Action::NameOfTheElements => self.elements_used == false, // アートオブエレメンタル使用済みだと使えません
-                Action::ByregotsBlessing => self.inner_quiet > 1, // ビエルゴはinner_quiet初期値の時は使えません
-                Action::PreciseTouch => self.condition == Condition::HighQuality,
+                Action::TricksOfTheTrade => self.condition == Condition::HighQuality || self.heart_and_soul,
+                Action::ByregotsBlessing => self.inner_quiet > 0, // ビエルゴはinner_quiet初期値の時は使えません
+                Action::PreciseTouch => self.condition == Condition::HighQuality || self.heart_and_soul,
                 Action::MuscleMemory => self.turn == 1, // 確信バフは最終確認で消えません
                 Action::CarefulObservation => self.careful_observation > 0,
-                Action::PatientTouch => self.inner_quiet != 0,
                 Action::PrudentTouch => self.waste_not == 0,
                 Action::Reflect => self.turn == 1, // 真価バフは最終確認で消えません
-                Action::IntensiveSynthesis => self.condition == Condition::HighQuality,
+                Action::IntensiveSynthesis => self.condition == Condition::HighQuality || self.heart_and_soul,
+                Action::HeartAndSoul => !self.heart_and_soul_used,
+                Action::PrudentSynthesis => self.waste_not == 0,
                 _ => true
             }
         }
@@ -544,7 +535,7 @@ impl State {
 
     // 加工
     fn action_basic_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.0,1).consume_cp(&Action::BasicTouch).consume_durability(10).next_turn(modifier).set_combo_touch().change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.setting,1.0,1).consume_cp(&Action::BasicTouch).consume_durability(10).next_turn(modifier).set_combo_basic_touch().change_condition(modifier).add_time(3)
     }
 
     // マスターズメンド
@@ -576,11 +567,6 @@ impl State {
         }
     }
 
-    // インナークワイエット
-    fn action_inner_quiet(&self, modifier:&mut Modifier) -> State {
-        self.consume_cp(&Action::HastyTouch).next_turn(modifier).set_inner_quiet(1).change_condition(modifier).add_time(2)
-    }
-
     // 経過観察
     fn action_observe(&self, modifier:&mut Modifier) -> State {
         self.consume_cp(&Action::Observe).next_turn(modifier).set_combo_observe().change_condition(modifier).add_time(3)
@@ -588,7 +574,7 @@ impl State {
 
     // 秘訣
     fn action_trick_of_the_trade(&self, modifier:&mut Modifier) -> State {
-        self.next_turn(modifier).add_cp(20,&modifier.setting).change_condition(modifier).add_time(3)
+        self.next_turn(modifier).add_cp(20,&modifier.setting).clear_heart_and_soul().change_condition(modifier).add_time(3)
     }
 
     // 倹約
@@ -603,7 +589,7 @@ impl State {
 
     // 中級加工
     fn action_standard_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.25,1).consume_cp(&Action::StandardTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.setting,1.25,1).consume_cp(&Action::StandardTouch).consume_durability(10).next_turn(modifier).set_combo_standard_touch().change_condition(modifier).add_time(3)
     }
 
     // グレートストライド
@@ -614,16 +600,6 @@ impl State {
     // イノベーション
     fn action_innovation(&self, modifier:&mut Modifier) -> State {
         self.consume_cp(&Action::Innovation).next_turn(modifier).set_innovation(4).change_condition(modifier).add_time(2)
-    }
-
-    // アートオブエレメンタル
-    fn action_name_of_elements(&self, modifier:&mut Modifier) -> State {
-        self.consume_cp(&Action::NameOfTheElements).next_turn(modifier).set_elements(3).change_condition(modifier).add_time(2)
-    }
-
-    // ブランドオブエレメンタル
-    fn action_brand_of_elements(&self, modifier:&mut Modifier) -> State {
-        self.add_working_elements(&modifier.setting).consume_cp(&Action::BrandOfTheElements).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 最終確認
@@ -643,7 +619,7 @@ impl State {
 
     // 集中加工
     fn action_precise_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.5,2).consume_cp(&Action::PreciseTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.setting,1.5,2).consume_cp(&Action::PreciseTouch).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
     }
 
     // 確信
@@ -658,19 +634,7 @@ impl State {
 
     // 模範作業
     fn action_careful_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,1.6).consume_cp(&Action::CarefulSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
-    }
-
-    // 専心加工
-    fn action_patient_touch(&self, modifier:&mut Modifier) -> State {
-        if modifier.try_random(0.5) {
-            // 成功の場合
-            self.add_quality_base(&modifier.setting,1.0).add_inner_quiet(self.inner_quiet).consume_cp(&Action::PatientTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
-        }
-        else {
-            // 失敗の場合
-            self.sub_inner_quiet(self.inner_quiet/2).consume_cp(&Action::PatientTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
-        }
+        self.add_working(&modifier.setting,1.8).consume_cp(&Action::CarefulSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // マニピュレーション
@@ -709,7 +673,7 @@ impl State {
 
     // 真価
     fn action_reflect(&self, modifier:&mut Modifier) -> State {
-        self.add_quality_base(&modifier.setting,1.0).set_inner_quiet(3).consume_cp(&Action::Reflect).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.setting,1.0,2).consume_cp(&Action::Reflect).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 下地加工
@@ -719,7 +683,7 @@ impl State {
 
     // 下地作業
     fn action_groundwork(&self, modifier:&mut Modifier) -> State {
-        let efficiency = if self.get_required_cp(&Action::Groundwork) < self.durability as u32 { 1.5 } else { 3.0 };
+        let efficiency = if self.get_required_cp(&Action::Groundwork) < self.durability as u32 { 1.8 } else { 3.6 };
 
         self.add_working(&modifier.setting,efficiency).consume_cp(&Action::Groundwork).consume_durability(20).next_turn(modifier).change_condition(modifier).add_time(3)
     }
@@ -731,18 +695,37 @@ impl State {
 
     // 集中作業
     fn action_intensive_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,4.0).consume_cp(&Action::IntensiveSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.setting,4.0).consume_cp(&Action::IntensiveSynthesis).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
+    }
+
+    // 上級加工
+    fn action_advanced_touch(&self, modifier:&mut Modifier) -> State {
+        self.add_quality(&modifier.setting,1.5,1).consume_cp(&Action::AdvancedTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+    }
+
+    // 一心不乱
+    fn action_heart_and_soul(&self, modifier:&mut Modifier) -> State {
+        self.set_heart_and_soul().next_turn(modifier).change_condition(modifier).add_time(2)
+    }
+
+    // 倹約作業
+    fn action_prudent_synthesis(&self, modifier:&mut Modifier) -> State {
+        self.add_working(&modifier.setting,1.8).consume_cp(&Action::PrudentSynthesis).consume_durability(5).next_turn(modifier).change_condition(modifier).add_time(3)
+    }
+
+    // 匠の神業
+    fn action_trained_finesse(&self, modifier:&mut Modifier) -> State {
+        self.add_quality(&modifier.setting,1.0,1).consume_cp(&Action::TrainedFinesse).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // アクション取得
     pub fn run_action(&self, modifier:&mut Modifier, a:&Action) -> State {
         match a {
-        Action::BasicSynthesis => self.action_basic_synthesis(modifier),
+            Action::BasicSynthesis => self.action_basic_synthesis(modifier),
             Action::BasicTouch => self.action_basic_touch(modifier),
             Action::MastersMend => self.action_masters_mend(modifier),
             Action::HastyTouch => self.action_hasty_touch(modifier),
             Action::RapidSynthesis => self.action_rapid_synthesis(modifier),
-            Action::InnerQuiet => self.action_inner_quiet(modifier),
             Action::Observe => self.action_observe(modifier),
             Action::TricksOfTheTrade => self.action_trick_of_the_trade(modifier),
             Action::WasteNot => self.action_waste_not(modifier),
@@ -750,8 +733,6 @@ impl State {
             Action::StandardTouch => self.action_standard_touch(modifier),
             Action::GreatStrides => self.action_great_strides(modifier),
             Action::Innovation => self.action_innovation(modifier),
-            Action::NameOfTheElements => self.action_name_of_elements(modifier),
-            Action::BrandOfTheElements => self.action_brand_of_elements(modifier),
             Action::FinalAppraisal => self.action_final_apprisal(modifier),
             Action::WasteNot2 => self.action_waste_not2(modifier),
             Action::ByregotsBlessing => self.action_byregots_blessing(modifier),
@@ -759,7 +740,6 @@ impl State {
             Action::MuscleMemory => self.action_muscle_memory(modifier),
             Action::CarefulObservation => self.action_careful_observation(modifier),
             Action::CarefulSynthesis => self.action_careful_synthesis(modifier),
-            Action::PatientTouch => self.action_patient_touch(modifier),
             Action::Manipulation => self.action_manipulation(modifier),
             Action::PrudentTouch => self.action_prudent_touch(modifier),
             Action::FocusedSynthesis => self.action_focused_synthesis(modifier),
@@ -769,6 +749,10 @@ impl State {
             Action::Groundwork => self.action_groundwork(modifier),
             Action::DelicateSynthesis => self.action_delecate_synthesis(modifier),
             Action::IntensiveSynthesis => self.action_intensive_synthesis(modifier),
+            Action::AdvancedTouch => self.action_advanced_touch(modifier),
+            Action::HeartAndSoul => self.action_heart_and_soul(modifier),
+            Action::PrudentSynthesis => self.action_prudent_synthesis(modifier),
+            Action::TrainedFinesse => self.action_trained_finesse(modifier),
         }
     }
 }
@@ -852,65 +836,17 @@ fn calc_quality( inner_quiet:u32 ) -> u32
 #[test]
 fn test_quality()
 {
-    assert!( diff( calc_quality(1), 634 ) < 3 );
-    assert!( diff( calc_quality(2), 787 ) < 3 );
-    assert!( diff( calc_quality(3), 953 ) < 3 );
-    assert!( diff( calc_quality(4), 1131 ) < 3 );
-    assert!( diff( calc_quality(5), 1319 ) < 3 );
-    assert!( diff( calc_quality(6), 1517 ) < 3 );
-    assert!( diff( calc_quality(7), 1727 ) < 3 );
-    assert!( diff( calc_quality(8), 1947 ) < 3 );
-    assert!( diff( calc_quality(9), 2178 ) < 3 );
-    assert!( diff( calc_quality(10), 2420 ) < 3 );
-    assert!( diff( calc_quality(11), 2673 ) < 3 );
-}
-
-// アートオブエレメンタルの実測値のテスト用
-#[allow(dead_code)]
-fn calc_elements_efficiency( working:u32 ) -> u32
-{
-    let setting = test_initial_setting();
-    let state = State { working:working, .. setting.initial_state() };
-
-    state.elements_efficiency(&setting)
-}
-
-#[test]
-fn test_elements()
-{
-    // 実測値を元にした比較
-    // 割と誤差あるようです
-    assert!( diff( calc_elements_efficiency(0), 300 ) < 3 );
-    assert!( diff( calc_elements_efficiency(472), 294 ) < 3 );
-    assert!( diff( calc_elements_efficiency(566), 292 ) < 3 );
-    assert!( diff( calc_elements_efficiency(708), 290 ) < 3 );
-    assert!( diff( calc_elements_efficiency(944), 286 ) < 3 );
-    assert!( diff( calc_elements_efficiency(1416), 278 ) < 3 );
-    assert!( diff( calc_elements_efficiency(1859), 270 ) < 3 );
-    assert!( diff( calc_elements_efficiency(1944), 267 ) < 3 );
-    assert!( diff( calc_elements_efficiency(2076), 266 ) < 3 );
-    assert!( diff( calc_elements_efficiency(2293), 262 ) < 3 );
-    assert!( diff( calc_elements_efficiency(2360), 262 ) < 3 );
-    assert!( diff( calc_elements_efficiency(2728), 256 ) < 3 );
-    assert!( diff( calc_elements_efficiency(3133), 248 ) < 3 );
-    assert!( diff( calc_elements_efficiency(3208), 248 ) < 3 );
-    assert!( diff( calc_elements_efficiency(3331), 246 ) < 3 );
-    assert!( diff( calc_elements_efficiency(3529), 242 ) < 3 );
-    assert!( diff( calc_elements_efficiency(3540), 242 ) < 3 );
-    assert!( diff( calc_elements_efficiency(3596), 242 ) < 3 );
-    assert!( diff( calc_elements_efficiency(4682), 224 ) < 3 );
-    assert!( diff( calc_elements_efficiency(4738), 222 ) < 3 );
-    assert!( diff( calc_elements_efficiency(5739), 206 ) < 3 );
-    assert!( diff( calc_elements_efficiency(7080), 183 ) < 3 );
-    assert!( diff( calc_elements_efficiency(7948), 170 ) < 3 );
-    assert!( diff( calc_elements_efficiency(8673), 158 ) < 3 );
-    assert!( diff( calc_elements_efficiency(8750), 156 ) < 3 );
-    assert!( diff( calc_elements_efficiency(9418), 144 ) < 3 );
-    assert!( diff( calc_elements_efficiency(10437), 128 ) < 3 );
-    assert!( diff( calc_elements_efficiency(10620), 124 ) < 3 );
-    assert!( diff( calc_elements_efficiency(11205), 114 ) < 3 );
-    assert!( diff( calc_elements_efficiency(11743), 105 ) < 3 );
-    assert!( diff( calc_elements_efficiency(12045), 102 ) < 3 );
+    assert!( diff( calc_quality(0), 634 ) < 3 );
+    assert!( diff( calc_quality(1), 787 ) < 3 );
+    assert!( diff( calc_quality(2), 953 ) < 3 );
+    assert!( diff( calc_quality(3), 1131 ) < 3 );
+    assert!( diff( calc_quality(4), 1319 ) < 3 );
+    assert!( diff( calc_quality(5), 1517 ) < 3 );
+    assert!( diff( calc_quality(6), 1727 ) < 3 );
+    assert!( diff( calc_quality(7), 1947 ) < 3 );
+    assert!( diff( calc_quality(8), 2178 ) < 3 );
+    assert!( diff( calc_quality(9), 2420 ) < 3 );
+    assert!( diff( calc_quality(10), 2673 ) < 3 );
 }
 
 #[allow(dead_code)]
@@ -925,16 +861,16 @@ fn calc_byregots_result( inner_quiet_stack:u32 ) -> u32 {
 fn test_byregots()
 {
     // 実測値を元にした比較
-    assert!( diff( calc_byregots_result(2), 944 ) < 3 );
-    assert!( diff( calc_byregots_result(3), 1334 ) < 3 );
-    assert!( diff( calc_byregots_result(4), 1809 ) < 3 );
-    assert!( diff( calc_byregots_result(5), 2374 ) < 3 );
-    assert!( diff( calc_byregots_result(6), 3034 ) < 3 );
-    assert!( diff( calc_byregots_result(7), 3799 ) < 3 );
-    assert!( diff( calc_byregots_result(8), 4672 ) < 3 );
-    assert!( diff( calc_byregots_result(9), 5662 ) < 3 );
-    assert!( diff( calc_byregots_result(10), 6776 ) < 3 );
-    assert!( diff( calc_byregots_result(11), 8019 ) < 3 );
+    assert!( diff( calc_byregots_result(1), 944 ) < 3 );
+    assert!( diff( calc_byregots_result(2), 1334 ) < 3 );
+    assert!( diff( calc_byregots_result(3), 1809 ) < 3 );
+    assert!( diff( calc_byregots_result(4), 2374 ) < 3 );
+    assert!( diff( calc_byregots_result(5), 3034 ) < 3 );
+    assert!( diff( calc_byregots_result(6), 3799 ) < 3 );
+    assert!( diff( calc_byregots_result(7), 4672 ) < 3 );
+    assert!( diff( calc_byregots_result(8), 5662 ) < 3 );
+    assert!( diff( calc_byregots_result(9), 6776 ) < 3 );
+    assert!( diff( calc_byregots_result(10), 8019 ) < 3 );
 }
 
 #[test]

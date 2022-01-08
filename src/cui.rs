@@ -10,7 +10,6 @@ fn parse_action( cmd:&str ) -> Option<Action> {
         "c" => Some(Action::MastersMend),
         "d" => Some(Action::HastyTouch),
         "e" => Some(Action::RapidSynthesis),
-        "f" => Some(Action::InnerQuiet),
         "g" => Some(Action::Observe),
         "h" => Some(Action::TricksOfTheTrade),
         "i" => Some(Action::WasteNot),
@@ -18,8 +17,6 @@ fn parse_action( cmd:&str ) -> Option<Action> {
         "k" => Some(Action::StandardTouch),
         "l" => Some(Action::GreatStrides),
         "m" => Some(Action::Innovation),
-        "n" => Some(Action::NameOfTheElements),
-        "o" => Some(Action::BrandOfTheElements),
         "p" => Some(Action::FinalAppraisal),
         "q" => Some(Action::WasteNot2),
         "r" => Some(Action::ByregotsBlessing),
@@ -27,7 +24,6 @@ fn parse_action( cmd:&str ) -> Option<Action> {
         "t" => Some(Action::MuscleMemory),
         "u" => Some(Action::CarefulObservation),
         "v" => Some(Action::CarefulSynthesis),
-        "w" => Some(Action::PatientTouch),
         "x" => Some(Action::Manipulation),
         "y" => Some(Action::PrudentTouch),
         "z" => Some(Action::FocusedSynthesis),
@@ -37,6 +33,10 @@ fn parse_action( cmd:&str ) -> Option<Action> {
         "D" => Some(Action::Groundwork),
         "E" => Some(Action::DelicateSynthesis),
         "F" => Some(Action::IntensiveSynthesis),
+        "G" => Some(Action::AdvancedTouch),
+        "H" => Some(Action::HeartAndSoul),
+        "I" => Some(Action::PrudentSynthesis),
+        "J" => Some(Action::TrainedFinesse),
         _ => None,
     }
 }
@@ -49,7 +49,6 @@ impl Action {
             Action::MastersMend => "マスターズメンド",
             Action::HastyTouch => "ヘイスティタッチ",
             Action::RapidSynthesis => "突貫作業",
-            Action::InnerQuiet => "インナークワイエット",
             Action::Observe => "経過観察",
             Action::TricksOfTheTrade => "秘訣",
             Action::WasteNot => "倹約",
@@ -57,8 +56,6 @@ impl Action {
             Action::StandardTouch => "中級加工",
             Action::GreatStrides => "グレートストライド",
             Action::Innovation => "イノベーション",
-            Action::NameOfTheElements => "アートオブエレメンタル",
-            Action::BrandOfTheElements => "ブランドオブエレメンタル",
             Action::FinalAppraisal => "最終確認",
             Action::WasteNot2 => "長期倹約",
             Action::ByregotsBlessing => "ビエルゴの祝福",
@@ -66,7 +63,6 @@ impl Action {
             Action::MuscleMemory => "確信",
             Action::CarefulObservation => "設計変更",
             Action::CarefulSynthesis => "模範作業",
-            Action::PatientTouch => "専心加工",
             Action::Manipulation => "マニピュレーション",
             Action::PrudentTouch => "倹約加工",
             Action::FocusedSynthesis => "注視作業",
@@ -76,6 +72,10 @@ impl Action {
             Action::Groundwork => "下地作業",
             Action::DelicateSynthesis => "精密作業",
             Action::IntensiveSynthesis => "集中作業",
+            Action::AdvancedTouch => "上級加工",
+            Action::HeartAndSoul => "一心不乱",
+            Action::PrudentSynthesis => "倹約加工",
+            Action::TrainedFinesse => "匠の神業",
         }
     }
 }
@@ -159,10 +159,6 @@ fn print_state(s:&State,setting:&Setting) {
         println!("残イノベーション:{}",s.innovation);
     }
 
-    if s.elements > 0 {
-        println!("残アートオブエレメンタル:{}",s.elements);
-    }
-
     if s.final_appraisal > 0 {
         println!("残最終確認:{}",s.final_appraisal);
     }
@@ -175,16 +171,16 @@ fn print_state(s:&State,setting:&Setting) {
         println!("残マニピュレーション:{}",s.manipulation);
     }
 
-    if s.elements_used && s.elements == 0 {
-        println!("アートオブエレメンタル使用不可");
-    }
-
     if s.combo_observe {
         println!("注視作業/注視加工100%");
     }
 
-    if s.combo_touch {
+    if s.combo_basic_touch {
         println!("中級加工CP低下");
+    }
+
+    if s.combo_standard_touch {
+        println!("上級加工CP低下");
     }
 }
 

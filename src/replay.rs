@@ -47,7 +47,7 @@ const HEADER: [&str; 17] = [
 ];
 
 fn format_state( s:&State ) -> String {
-    format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+    format!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
         s.turn,
         s.time,
         s.working,
@@ -60,7 +60,6 @@ fn format_state( s:&State ) -> String {
         s.veneration,
         s.great_strides,
         s.innovation,
-        s.elements,
         s.final_appraisal,
         s.muscle_memory,
         s.manipulation,

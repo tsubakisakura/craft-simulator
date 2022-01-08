@@ -33,7 +33,7 @@ pub fn encode_state( s:&State, setting:&Setting ) -> StateVector {
         s.durability as f32 / setting.max_durability as f32,
         s.cp as f32 / setting.max_cp as f32,
 
-        if s.inner_quiet == 0 { 0.0 } else { (s.inner_quiet - 1) as f32 / 10.0 },
+        s.inner_quiet as f32 / 10.0,
         s.inner_quiet.to_onehot(),
         s.careful_observation as f32 / 10.0,
         s.careful_observation.to_onehot(),
@@ -45,8 +45,6 @@ pub fn encode_state( s:&State, setting:&Setting ) -> StateVector {
         s.great_strides.to_onehot(),
         s.innovation as f32 / 10.0,
         s.innovation.to_onehot(),
-        s.elements as f32 / 10.0,
-        s.elements.to_onehot(),
         s.final_appraisal as f32 / 10.0,
         s.final_appraisal.to_onehot(),
         s.muscle_memory as f32 / 10.0,
@@ -54,8 +52,10 @@ pub fn encode_state( s:&State, setting:&Setting ) -> StateVector {
         s.manipulation as f32 / 10.0,
         s.manipulation.to_onehot(),
 
-        s.elements_used.to_onehot(),
-        s.combo_touch.to_onehot(),
+        s.heart_and_soul.to_onehot(),
+        s.heart_and_soul_used.to_onehot(),
+        s.combo_basic_touch.to_onehot(),
+        s.combo_standard_touch.to_onehot(),
         s.combo_observe.to_onehot(),
 
         (s.condition == Condition::Standard).to_onehot(),
