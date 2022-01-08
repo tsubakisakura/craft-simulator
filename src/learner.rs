@@ -45,8 +45,8 @@ impl RecordBuffer {
         self.states.size2().unwrap().0
     }
 
-    fn is_empty(&self) -> bool {
-        self.states.size2().unwrap().0 == 0
+    fn is_full(&self) -> bool {
+        self.states.size2().unwrap().0 == self.max_length
     }
 
     fn append(&mut self, (states,policies,values):(Tensor,Tensor,Tensor) ) {
@@ -188,19 +188,19 @@ fn run_epoch_loop( mysql_pool:&Arc<Mutex<Pool>>, record_buffer:&mut RecordBuffer
     eprintln!("download samples...");
     add_samples_from_blobs( record_buffer, &sample_blobs, 0 );
 
-    if !record_buffer.is_empty() {
-        // バッファに何かあるなら学習して出力します。
+    if record_buffer.is_full() {
+        // バッファが埋まり次第処理します
         train( optimizer, net, record_buffer, epoch );
         export_weights( &mysql_pool, vs, network_type ).unwrap();
     }
     else if !is_exist_model(mysql_pool).unwrap() {
-        // バッファに何もなく、モデルもないなら、今のモデルを初期状態として出力します。
+        // バッファが埋まっておらず、モデルもないなら、今のモデルを初期状態として出力します。
         export_weights( &mysql_pool, vs, network_type ).unwrap();
     }
     else {
-        // バッファに何もないけど、モデルはある状態です。
+        // バッファが埋まってないけど、モデルはある状態です。
         // evaluatorとgeneratorは最良モデルを利用して計算しているはずなので、新しいサンプルの到着を待ちます。
-        eprintln!("Wait for new samples...");
+        eprintln!("Wait for new samples... {}/{})", record_buffer.len(), record_buffer.max_length);
         std::thread::sleep( std::time::Duration::from_secs(3) );
     }
 }
