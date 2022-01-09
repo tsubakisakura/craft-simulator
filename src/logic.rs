@@ -485,8 +485,8 @@ impl State {
         State { combo_basic_touch: true, .. *self }
     }
 
-    fn set_combo_standard_touch(&self) -> State {
-        State { combo_standard_touch: true, .. *self }
+    fn set_combo_standard_touch(&self, combo_basic_touch:bool) -> State {
+        State { combo_standard_touch: combo_basic_touch, .. *self }
     }
 
     fn set_combo_observe(&self) -> State {
@@ -590,7 +590,9 @@ impl State {
 
     // 中級加工
     fn action_standard_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.25,1).consume_cp(&Action::StandardTouch).consume_durability(10).next_turn(modifier).set_combo_standard_touch().change_condition(modifier).add_time(3)
+        // 上級加工へのコンボは直前の中級加工コンボが有効でなければ発動しません
+        let combo_basic_touch = self.combo_basic_touch;
+        self.add_quality(&modifier.setting,1.25,1).consume_cp(&Action::StandardTouch).consume_durability(10).next_turn(modifier).set_combo_standard_touch(combo_basic_touch).change_condition(modifier).add_time(3)
     }
 
     // グレートストライド
