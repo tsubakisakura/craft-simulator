@@ -520,6 +520,7 @@ impl State {
                 Action::IntensiveSynthesis => self.condition == Condition::HighQuality || self.heart_and_soul,
                 Action::HeartAndSoul => !self.heart_and_soul_used,
                 Action::PrudentSynthesis => self.waste_not == 0,
+                Action::TrainedFinesse => self.inner_quiet == 10, // 匠の神業はIQ10限定
                 _ => true
             }
         }
