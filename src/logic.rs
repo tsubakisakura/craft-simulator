@@ -280,7 +280,7 @@ impl State {
             Action::Groundwork => 18,
             Action::DelicateSynthesis => 32,
             Action::IntensiveSynthesis => 6,
-            Action::AdvancedTouch => if self.combo_standard_touch { 18 } else { 32 },
+            Action::AdvancedTouch => if self.combo_standard_touch { 18 } else { 46 },
             Action::HeartAndSoul => 0,
             Action::PrudentSynthesis => 18,
             Action::TrainedFinesse => 32,
