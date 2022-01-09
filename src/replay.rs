@@ -26,7 +26,7 @@ fn get_records( record_name: String ) -> Vec<Record> {
     bincode::deserialize(&serialized).unwrap()
 }
 
-const HEADER: [&str; 17] = [
+const HEADER: [&str; 16] = [
     "TURN",
     "時間",
     "作業",
@@ -39,7 +39,6 @@ const HEADER: [&str; 17] = [
     "ヴェネ",
     "グレ",
     "イノベ",
-    "アート",
     "最終",
     "確信",
     "マニ",
