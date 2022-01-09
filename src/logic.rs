@@ -708,7 +708,7 @@ impl State {
 
     // 一心不乱
     fn action_heart_and_soul(&self, modifier:&mut Modifier) -> State {
-        self.set_heart_and_soul().next_turn(modifier).change_condition(modifier).add_time(2)
+        self.clear_combo().set_heart_and_soul().change_condition(modifier).add_time(2)
     }
 
     // 倹約作業
