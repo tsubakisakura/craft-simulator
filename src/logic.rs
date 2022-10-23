@@ -304,7 +304,7 @@ impl State {
             _ if v < 0.37 => Condition::Standard,
             _ if v < 0.49 => Condition::HighQuality,
             _ if v < 0.61 => Condition::HighProgress,
-            _ if v < 0.73 => Condition::HighEfficiency,
+            _ if v < 0.73 => Condition::Stable,
             _ if v < 0.85 => Condition::HighSustain,
             _             => Condition::Solid,
         }
