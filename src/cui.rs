@@ -89,6 +89,7 @@ impl Condition {
             Condition::HighEfficiency => "高能率",
             Condition::HighSustain => "高持続",
             Condition::Solid => "頑丈",
+            Condition::Stable => "安定",
         }
     }
 
@@ -100,6 +101,7 @@ impl Condition {
             Condition::HighEfficiency => "\x1b[38;2;128;255;128m",
             Condition::HighSustain => "\x1b[38;2;255;255;128m",
             Condition::Solid => "\x1b[38;2;128;128;255m",
+            Condition::Stable => "\x1b[38;2;255;255;64m"
         }
     }
 }

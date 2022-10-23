@@ -16,6 +16,7 @@ pub enum Condition
     HighEfficiency, // 高能率
     HighSustain,    // 高持続
     Solid,          // 頑丈
+    Stable,         // 安定
 }
 
 pub const ACTION_NUM: usize = 32;
@@ -340,6 +341,10 @@ impl State {
         if self.condition == Condition::HighSustain { x+2 } else { x }
     }
 
+    fn probability(&self,x:f32) -> f32 {
+        if self.condition == Condition::Stable { x+0.25 } else { x }
+    }
+
     // 作業に対する品質報酬
     // 情報が無いので、そのまま決め打ちで打ち込んでます
     fn working_reward(&self, setting:&Setting, efficiency : f64 ) -> u32 {
@@ -546,7 +551,7 @@ impl State {
 
     // ヘイスティタッチ
     fn action_hasty_touch(&self, modifier:&mut Modifier) -> State {
-        if modifier.try_random(0.5) {
+        if modifier.try_random(self.probability(0.5)) {
             // 成功時
             self.add_quality(&modifier.setting,1.0,1).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
@@ -558,7 +563,7 @@ impl State {
 
     // 突貫作業
     fn action_rapid_synthesis(&self, modifier:&mut Modifier) -> State {
-        if modifier.try_random(0.5) {
+        if modifier.try_random(self.probability(0.5)) {
             // 成功時
             self.add_working(&modifier.setting,5.0).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
@@ -652,7 +657,7 @@ impl State {
 
     // 注視作業
     fn action_focused_synthesis(&self, modifier:&mut Modifier) -> State {
-        if self.combo_observe || modifier.try_random(0.5) {
+        if self.combo_observe || modifier.try_random(self.probability(0.5)) {
             // 成功の場合
             self.add_working(&modifier.setting,1.5).consume_cp(&Action::FocusedSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
@@ -664,7 +669,7 @@ impl State {
 
     // 注視作業
     fn action_focused_touch(&self, modifier:&mut Modifier) -> State {
-        if self.combo_observe || modifier.try_random(0.5) {
+        if self.combo_observe || modifier.try_random(self.probability(0.5)) {
             // 成功の場合
             self.add_quality(&modifier.setting,1.5,1).consume_cp(&Action::FocusedTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
