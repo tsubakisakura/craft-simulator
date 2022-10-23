@@ -24,6 +24,7 @@ use selector::Selector;
 use learner::{LearnerParameter};
 use benchmark::BenchmarkParameter;
 use network2::NetworkType;
+use cui::{CuiParameter};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(description="toplevel command")]
@@ -167,8 +168,6 @@ struct SubCommandReplay {
 struct SubCommandCui {
 }
 
-// 食事効果を入れておきます
-// 内容はcui.rsと同じなのでリファクタして共通化したいです
 fn initial_setting() -> Setting {
     Setting {
         max_working:12046,
@@ -292,7 +291,11 @@ fn cmd_replay( args: SubCommandReplay ) {
 }
 
 fn cmd_cui( _args:SubCommandCui ) {
-    cui::run_cui();
+    let param = CuiParameter {
+        mod_param:ModifierParameter::new(&initial_setting()),
+    };
+
+    cui::run_cui(param);
 }
 
 fn main() {

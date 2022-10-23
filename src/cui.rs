@@ -1,7 +1,11 @@
 ﻿
 use std::time::SystemTime;
-use super::logic::{Action,Modifier,ModifierParameter,State,Setting,Condition,get_technical_point};
+use super::logic::{Action,Modifier,ModifierParameter,State,Condition,get_technical_point};
 use xorshift::{SeedableRng};
+
+pub struct CuiParameter {
+    pub mod_param : ModifierParameter
+}
 
 fn parse_action( cmd:&str ) -> Option<Action> {
     match cmd {
@@ -124,16 +128,16 @@ fn get_normal_color_escape() -> &'static str {
     "\x1b[39m"
 }
 
-fn print_state(s:&State,setting:&Setting) {
+fn print_state(s:&State,mod_param:&ModifierParameter) {
     print!("\x1b[2J"); // 画面クリア
     print!("\x1b[0;0H"); // 左上移動
     print_action();
 
     println!("TURN:{}", s.turn);
-    println!("作業:{}/{}", s.working, setting.max_working);
-    println!("品質:{}/{}", s.quality, setting.max_quality);
-    println!("耐久:{}/{}", s.durability, setting.max_durability);
-    println!("ＣＰ:{}/{}", s.cp, setting.max_cp);
+    println!("作業:{}/{}", s.working, mod_param.max_working);
+    println!("品質:{}/{}", s.quality, mod_param.max_quality);
+    println!("耐久:{}/{}", s.durability, mod_param.max_durability);
+    println!("ＣＰ:{}/{}", s.cp, mod_param.max_cp);
     println!("状態:{}●{}{}", s.condition.get_color_escape(), get_normal_color_escape(), s.condition.translate_ja() );
     println!("=====================");
 
@@ -194,33 +198,16 @@ fn print_state(s:&State,setting:&Setting) {
     }
 }
 
-// 食事効果を入れておきます
-fn initial_setting() -> Setting {
-    Setting {
-        max_working:12046,
-        max_quality:81447,
-        max_durability:55,
-        work_accuracy:2769,
-        //process_accuracy:2840,
-        process_accuracy:2840 + 70,
-        required_process_accuracy:2540,
-        //max_cp:569,
-        max_cp:569 + 72 + 16,
-    }
-}
-
-pub fn run_cui() {
-    let setting = initial_setting();
-
+pub fn run_cui( param:CuiParameter ) {
     let seed : u64 = From::from( SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Failed to get UNIXTIME").subsec_nanos() );
     let states = [seed, seed];
-    let mut modifier = Modifier { mod_param:ModifierParameter::new(&setting), rng:SeedableRng::from_seed(&states[..]) };
-    let mut state = State::new(&modifier.mod_param);
+    let mut modifier = Modifier { mod_param:param.mod_param.clone(), rng:SeedableRng::from_seed(&states[..]) };
+    let mut state = State::new(&param.mod_param);
 
-    println!("{:?}", setting);
+    println!("{:?}", param.mod_param);
 
     while !state.is_terminated() {
-        print_state(&state, &setting);
+        print_state(&state, &param.mod_param);
 
         let mut cmd = String::new();
         std::io::stdin().read_line(&mut cmd).expect("Failed to read_line");
@@ -238,7 +225,7 @@ pub fn run_cui() {
         }
     }
 
-    print_state(&state, &setting);
+    print_state(&state, &param.mod_param);
     if state.is_destroyed() {
         println!("Destroyed => Technical Point:0" );
     }
