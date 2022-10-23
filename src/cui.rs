@@ -171,6 +171,14 @@ fn print_state(s:&State,setting:&Setting) {
         println!("残マニピュレーション:{}",s.manipulation);
     }
 
+    if s.heart_and_soul {
+        println!("一心不乱有効");
+    }
+
+    if s.heart_and_soul_used {
+        println!("一心不乱再使用不可");
+    }
+
     if s.combo_observe {
         println!("注視作業/注視加工100%");
     }
