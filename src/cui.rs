@@ -1,6 +1,6 @@
 ﻿
 use std::time::SystemTime;
-use super::logic::{Action,Modifier,State,Setting,Condition,get_technical_point};
+use super::logic::{Action,Modifier,ModifierParameter,State,Setting,Condition,get_technical_point};
 use xorshift::{SeedableRng};
 
 fn parse_action( cmd:&str ) -> Option<Action> {
@@ -215,7 +215,7 @@ pub fn run_cui() {
 
     let seed : u64 = From::from( SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Failed to get UNIXTIME").subsec_nanos() );
     let states = [seed, seed];
-    let mut modifier = Modifier { setting:setting.clone(), rng:SeedableRng::from_seed(&states[..]) };
+    let mut modifier = Modifier { setting:ModifierParameter::new(&setting), rng:SeedableRng::from_seed(&states[..]) };
 
     println!("{:?}", setting);
 

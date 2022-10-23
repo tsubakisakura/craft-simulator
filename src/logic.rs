@@ -96,9 +96,21 @@ pub struct Setting
     pub max_cp : u32,                     // 初期CP
 }
 
+#[derive(Debug,Clone)]
+pub struct ModifierParameter
+{
+    pub max_working : u32,                // 必要工数
+    pub max_quality : u32,                // 品質上限
+    pub max_durability : u32,             // 初期耐久
+    pub work_accuracy : u32,              // 作業精度
+    pub process_accuracy : u32,           // 加工精度
+    pub required_process_accuracy : u32,  // 必要加工精度
+    pub max_cp : u32,                     // 初期CP
+}
+
 pub struct Modifier
 {
-    pub setting : Setting,
+    pub setting : ModifierParameter,
     pub rng : Xorshift128,
 }
 
@@ -194,6 +206,20 @@ impl ToPrimitive for Action {
             Action::PrudentSynthesis => 30,
             Action::TrainedFinesse => 31,
         })
+    }
+}
+
+impl ModifierParameter {
+    pub fn new(setting:&Setting) -> ModifierParameter {
+        ModifierParameter {
+            max_working : setting.max_working,
+            max_quality : setting.max_quality,
+            max_durability : setting.max_durability,
+            work_accuracy : setting.work_accuracy,
+            process_accuracy : setting.process_accuracy,
+            required_process_accuracy : setting.required_process_accuracy,
+            max_cp : setting.max_cp,
+        }
     }
 }
 
@@ -347,7 +373,7 @@ impl State {
 
     // 作業に対する品質報酬
     // 情報が無いので、そのまま決め打ちで打ち込んでます
-    fn working_reward(&self, setting:&Setting, efficiency : f64 ) -> u32 {
+    fn working_reward(&self, setting:&ModifierParameter, efficiency : f64 ) -> u32 {
         // 情報が無いのでそのまま決め打ちの数値の対応です。それ以外に対応することになったらやる
         if setting.work_accuracy != 2769 {
             return 99999;
@@ -364,7 +390,7 @@ impl State {
     // こちらの記事が紹介しているcalculatorの内容を参考にしています。
     // https://jp.finalfantasyxiv.com/lodestone/character/29523439/blog/4641394/
     // 完全一致はしませんが、近似値として使えます。完全一致を求めるならば、データシートを作るほうが良いと思う
-    fn quality_reward(&self, setting:&Setting, efficiency : f64) -> u32 {
+    fn quality_reward(&self, setting:&ModifierParameter, efficiency : f64) -> u32 {
         let inner_quiet : f64 = From::from(self.inner_quiet);
         let process_accuracy : f64 = From::from(setting.process_accuracy);
         let required_process_accuracy : f64 = From::from(setting.required_process_accuracy);
@@ -379,7 +405,7 @@ impl State {
         return ( q3 * cond_rate * efficiency * buff_rate ) as u32;
     }
 
-    fn add_working(&self, setting:&Setting, efficiency : f64) -> State {
+    fn add_working(&self, setting:&ModifierParameter, efficiency : f64) -> State {
         let w = self.working + self.working_reward(&setting,efficiency);
 
         if w >= setting.max_working {
@@ -395,7 +421,7 @@ impl State {
         }
     }
 
-    fn add_quality_base(&self, setting:&Setting, efficiency:f64) -> State {
+    fn add_quality_base(&self, setting:&ModifierParameter, efficiency:f64) -> State {
         State {
             quality: min(self.quality + self.quality_reward(&setting,efficiency), setting.max_quality),
             great_strides: 0,
@@ -418,11 +444,11 @@ impl State {
         State { inner_quiet: inner_quiet, .. *self }
     }
 
-    fn add_quality(&self, setting:&Setting, efficiency:f64, inner_quiet_stack:u32) -> State {
+    fn add_quality(&self, setting:&ModifierParameter, efficiency:f64, inner_quiet_stack:u32) -> State {
         self.add_quality_base(&setting,efficiency).add_inner_quiet(inner_quiet_stack)
     }
 
-    fn add_quality_byregots(&self, setting:&Setting) -> State {
+    fn add_quality_byregots(&self, setting:&ModifierParameter) -> State {
         self.add_quality_base(&setting,1.0 + self.inner_quiet as f64 * 0.2).set_inner_quiet(0)
     }
 
@@ -442,11 +468,11 @@ impl State {
         State { durability: if self.durability > q { self.durability - q } else { 0 }, .. *self }
     }
 
-    fn add_durability(&self, x:u32, setting:&Setting) -> State {
+    fn add_durability(&self, x:u32, setting:&ModifierParameter) -> State {
         State { durability: min(self.durability+x,setting.max_durability), ..*self }
     }
 
-    fn add_cp(&self, x:u32, setting:&Setting) -> State {
+    fn add_cp(&self, x:u32, setting:&ModifierParameter) -> State {
         State { cp: min(self.cp+x,setting.max_cp), ..*self }
     }
 

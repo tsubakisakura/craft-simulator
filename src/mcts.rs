@@ -1,5 +1,5 @@
 ﻿use std::collections::HashMap;
-use super::logic::{State,Action,Modifier,Setting,ACTION_NUM};
+use super::logic::{State,Action,Modifier,ModifierParameter,ACTION_NUM};
 use super::predictor::*;
 use num::FromPrimitive;
 use xorshift::{Rng,Xorshift128};
@@ -114,7 +114,7 @@ fn lerp_clip( a:f32, b:f32, c:f32 ) -> f32 {
 }
 
 // 報酬関数です。
-pub fn get_reward(s:&State,setting:&Setting) -> f32 {
+pub fn get_reward(s:&State,setting:&ModifierParameter) -> f32 {
     if s.is_destroyed() {
         0.0
     }
