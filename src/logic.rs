@@ -260,12 +260,6 @@ fn decrement_clip( x : u32 ) -> u32 {
     if x > 0 { x - 1 } else { 0 }
 }
 
-impl Setting {
-    pub fn initial_state(&self) -> State {
-        ModifierParameter::new(self).initial_state()
-    }
-}
-
 impl State {
     pub fn is_destroyed(&self) -> bool {
         !self.completed && self.durability <= 0

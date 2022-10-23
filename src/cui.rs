@@ -211,11 +211,11 @@ fn initial_setting() -> Setting {
 
 pub fn run_cui() {
     let setting = initial_setting();
-    let mut state = setting.initial_state();
 
     let seed : u64 = From::from( SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Failed to get UNIXTIME").subsec_nanos() );
     let states = [seed, seed];
     let mut modifier = Modifier { mod_param:ModifierParameter::new(&setting), rng:SeedableRng::from_seed(&states[..]) };
+    let mut state = modifier.mod_param.initial_state();
 
     println!("{:?}", setting);
 
