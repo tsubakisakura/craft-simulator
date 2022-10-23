@@ -1,10 +1,10 @@
 use core::cmp::min;
 
 use super::network2::*;
-use super::logic::{State,Setting};
+use super::logic::{State,ModifierParameter};
 
 pub struct BenchmarkParameter {
-    pub setting:Setting,
+    pub setting:ModifierParameter,
     pub batch_size:usize,
     pub plays_per_write:usize,
 }

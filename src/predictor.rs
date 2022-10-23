@@ -6,7 +6,7 @@ use std::cell::{Cell,RefCell};
 use std::rc::Rc;
 
 use super::mcts::ActionVector;
-use super::logic::{State,Setting};
+use super::logic::{State,ModifierParameter};
 use super::network2::*;
 
 // 個々のNNが予測した結果を保存するための場所
@@ -57,7 +57,7 @@ impl Predictor {
         }
     }
 
-    pub fn predict_batch(&mut self, setting:&Setting) {
+    pub fn predict_batch(&mut self, setting:&ModifierParameter) {
         let mut tasks = self.tasks.borrow_mut();
 
         for (name,task_vec) in tasks.iter() {

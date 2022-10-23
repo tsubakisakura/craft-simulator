@@ -11,7 +11,7 @@ use super::gcs::*;
 
 use super::formatter::*;
 use super::selfplay::*;
-use super::logic::Setting;
+use super::logic::ModifierParameter;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Trait
@@ -141,13 +141,13 @@ impl WriteRecord for EvaluationWriter {
 
 pub struct GenerationWriter {
     mysql_pool : Arc<Mutex<Pool>>,
-    setting : Setting,
+    setting : ModifierParameter,
     plays_per_write : usize,
     buffer : Vec<Record>,
 }
 
 impl GenerationWriter {
-    pub fn new( mysql_pool:Arc<Mutex<Pool>>, plays_per_write:usize, setting:Setting ) -> GenerationWriter {
+    pub fn new( mysql_pool:Arc<Mutex<Pool>>, plays_per_write:usize, setting:ModifierParameter ) -> GenerationWriter {
         GenerationWriter {
             mysql_pool : mysql_pool,
             setting : setting,
@@ -166,7 +166,7 @@ fn write_samples<W:Write,F:Formatter>( writer:&mut W, formatter:&F, record:&Reco
     Ok(())
 }
 
-fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, setting:&Setting, buf:&Vec<Record> ) {
+fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, setting:&ModifierParameter, buf:&Vec<Record> ) {
 
     // アップロードするファイル名を決定します
     let ulid = Ulid::new().to_string();

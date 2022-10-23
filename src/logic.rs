@@ -221,19 +221,7 @@ impl ModifierParameter {
             max_cp : setting.max_cp,
         }
     }
-}
 
-impl Modifier {
-    fn try_random(&mut self, success_rate : f32) -> bool {
-        self.rng.next_f32() < success_rate
-    }
-}
-
-fn decrement_clip( x : u32 ) -> u32 {
-    if x > 0 { x - 1 } else { 0 }
-}
-
-impl Setting {
     pub fn initial_state(&self) -> State {
         State {
             turn:1,
@@ -259,6 +247,22 @@ impl Setting {
             combo_observe:false,
             condition:Condition::Standard,
         }
+    }
+}
+
+impl Modifier {
+    fn try_random(&mut self, success_rate : f32) -> bool {
+        self.rng.next_f32() < success_rate
+    }
+}
+
+fn decrement_clip( x : u32 ) -> u32 {
+    if x > 0 { x - 1 } else { 0 }
+}
+
+impl Setting {
+    pub fn initial_state(&self) -> State {
+        ModifierParameter::new(self).initial_state()
     }
 }
 

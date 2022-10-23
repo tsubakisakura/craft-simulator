@@ -23,7 +23,7 @@ impl OneHotConvertible for bool {
 }
 
 // ターンが絡むものは全て均等に10で割ることにします(各ノードの影響を均等にする意図)
-pub fn encode_state( s:&State, setting:&Setting ) -> StateVector {
+pub fn encode_state( s:&State, setting:&ModifierParameter ) -> StateVector {
     [
         s.turn as f32 / 128.0,
         s.time as f32 / 256.0,
@@ -69,7 +69,7 @@ pub fn encode_state( s:&State, setting:&Setting ) -> StateVector {
 
 // 配列からテンソル作成
 // あまり効率はよくない
-pub fn encode_state_batch( states:&[State], setting:&Setting ) -> Tensor {
+pub fn encode_state_batch( states:&[State], setting:&ModifierParameter ) -> Tensor {
 
     let mut state_vec = vec!{};
     state_vec.resize( states.len() * STATE_NUM, 0.0 );

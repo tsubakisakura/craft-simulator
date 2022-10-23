@@ -17,7 +17,7 @@ mod executor;
 mod predictor;
 mod replay;
 
-use logic::Setting;
+use logic::{Setting,ModifierParameter};
 use argh::FromArgs;
 use selfplay::{WriterParameter,EpisodeParameter,SelfPlayParameter};
 use selector::Selector;
@@ -210,7 +210,7 @@ fn with_flamegraph<F: FnOnce()>( f:F ) {
 fn cmd_evaluator( args:SubCommandEvaluator ) {
     let param = SelfPlayParameter {
         episode_param: EpisodeParameter {
-            setting:initial_setting(),
+            setting:ModifierParameter::new(&initial_setting()),
             mcts_simulation_num:args.mcts_simulation_num,
             alpha:0.15,
             eps:0.0,
@@ -237,7 +237,7 @@ fn cmd_evaluator( args:SubCommandEvaluator ) {
 fn cmd_generator( args:SubCommandGenerator ) {
     let param = SelfPlayParameter {
         episode_param: EpisodeParameter {
-            setting:initial_setting(),
+            setting:ModifierParameter::new(&initial_setting()),
             mcts_simulation_num:args.mcts_simulation_num,
             alpha:args.alpha,
             eps:args.eps,
@@ -279,7 +279,7 @@ fn cmd_learner( args:SubCommandLearner ) {
 
 fn cmd_benchmark( args:SubCommandBenchmark ) {
     let param = BenchmarkParameter {
-        setting:initial_setting(),
+        setting:ModifierParameter::new(&initial_setting()),
         batch_size:args.batch_size,
         plays_per_write:args.plays_per_write,
     };

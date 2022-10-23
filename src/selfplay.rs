@@ -11,7 +11,7 @@ use serde::{Serialize,Deserialize};
 use xorshift::{SeedableRng};
 
 use super::selector::{Selector,UCB1Context};
-use super::logic::{State,Setting,Action,Modifier,ModifierParameter};
+use super::logic::{State,Action,Modifier,ModifierParameter};
 use super::mcts::{MCTSContext,ActionVector,select_action_weighted,select_action_greedy,get_reward};
 use super::writer::*;
 use super::cache::*;
@@ -27,7 +27,7 @@ pub enum WriterParameter {
 
 #[derive(Debug,Clone)]
 pub struct EpisodeParameter {
-    pub setting : Setting,
+    pub setting : ModifierParameter,
     pub mcts_simulation_num : u32,
     pub alpha : f32,
     pub eps : f32,
@@ -80,7 +80,7 @@ async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, pre
 
     let seed : u64 = From::from( SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Failed to get UNIXTIME").subsec_nanos() );
     let seeds = [seed, seed];
-    let mut modifier = Modifier { setting:ModifierParameter::new(&param.setting), rng:SeedableRng::from_seed(&seeds[..]) };
+    let mut modifier = Modifier { setting:param.setting.clone(), rng:SeedableRng::from_seed(&seeds[..]) };
 
     let mut samples = vec![];
     let mut state = param.setting.initial_state();

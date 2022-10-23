@@ -1,6 +1,6 @@
 ﻿
 use super::selfplay::{Sample,Record};
-use super::logic::Setting;
+use super::logic::ModifierParameter;
 use super::network::encode_state;
 
 pub trait Formatter {
@@ -9,10 +9,10 @@ pub trait Formatter {
 
 #[derive(Clone)]
 pub struct TsvFormatter {
-    pub setting : Setting,
+    pub setting : ModifierParameter,
 }
 
-fn export_by_tsv(s:&Sample, setting:&Setting, reward:f32) -> String {
+fn export_by_tsv(s:&Sample, setting:&ModifierParameter, reward:f32) -> String {
     let state_vec = encode_state(&s.state, setting);
     let reward_vec = [reward];
 
