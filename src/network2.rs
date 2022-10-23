@@ -91,8 +91,8 @@ pub trait DualNetwork {
 
     fn forward_t(&self, input: &Tensor, train:bool) -> (Tensor,Tensor);
 
-    fn predict_batch(&self, states:&[State], setting:&ModifierParameter) -> Result<Vec<(ActionVector,f32)>, Box<dyn Error>> {
-        let state_vec_t = encode_state_batch( states, setting );
+    fn predict_batch(&self, states:&[State], mod_param:&ModifierParameter) -> Result<Vec<(ActionVector,f32)>, Box<dyn Error>> {
+        let state_vec_t = encode_state_batch( states, mod_param );
         let pv_t = self.forward_t(&state_vec_t, false);
         Ok(decode_pv_batch(pv_t))
     }

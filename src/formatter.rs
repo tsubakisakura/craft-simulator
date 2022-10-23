@@ -9,11 +9,11 @@ pub trait Formatter {
 
 #[derive(Clone)]
 pub struct TsvFormatter {
-    pub setting : ModifierParameter,
+    pub mod_param : ModifierParameter,
 }
 
-fn export_by_tsv(s:&Sample, setting:&ModifierParameter, reward:f32) -> String {
-    let state_vec = encode_state(&s.state, setting);
+fn export_by_tsv(s:&Sample, mod_param:&ModifierParameter, reward:f32) -> String {
+    let state_vec = encode_state(&s.state, mod_param);
     let reward_vec = [reward];
 
     // State -> Policy -> Value の順に並べます
@@ -28,6 +28,6 @@ fn export_by_tsv(s:&Sample, setting:&ModifierParameter, reward:f32) -> String {
 
 impl Formatter for TsvFormatter {
     fn format(&self, record:&Record) -> Vec<String> {
-        record.samples.iter().map(|x| export_by_tsv(&x, &self.setting, record.reward)).collect()
+        record.samples.iter().map(|x| export_by_tsv(&x, &self.mod_param, record.reward)).collect()
     }
 }

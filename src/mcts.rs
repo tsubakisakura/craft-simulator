@@ -114,21 +114,21 @@ fn lerp_clip( a:f32, b:f32, c:f32 ) -> f32 {
 }
 
 // 報酬関数です。
-pub fn get_reward(s:&State,setting:&ModifierParameter) -> f32 {
+pub fn get_reward(s:&State,mod_param:&ModifierParameter) -> f32 {
     if s.is_destroyed() {
         0.0
     }
     else {
         // 品質[0,1]
-        let quality_reward = s.quality as f32 / setting.max_quality as f32;
+        let quality_reward = s.quality as f32 / mod_param.max_quality as f32;
 
         // ターン(タイム)ボーナス[0,1]
         //let b = lerp_clip(60.0,20.0,s.turn as f32) * lerp_clip(81000.0,81400.0,s.quality as f32);
-        //let b = if s.quality == setting.max_quality { lerp_clip(60.0,20.0,s.turn as f32) } else { 0.0 };
+        //let b = if s.quality == mod_param.max_quality { lerp_clip(60.0,20.0,s.turn as f32) } else { 0.0 };
         let time_reward = lerp_clip(150.0,50.0,s.time as f32);
 
         // max品質ボーナス
-        let max_reward = if s.quality == setting.max_quality { 1.0 } else { 0.0 };
+        let max_reward = if s.quality == mod_param.max_quality { 1.0 } else { 0.0 };
 
         // 品質とターンボーナスのマージ用定数
         //let t = 0.9;
@@ -231,7 +231,7 @@ impl MCTSContext {
         let mut path = vec!{};
         loop {
             if s.is_terminated() {
-                return (path,SearchResult::Reward(get_reward(&s,&modifier.setting)));
+                return (path,SearchResult::Reward(get_reward(&s,&modifier.mod_param)));
             }
             else if let Some(node) = self.nodes.get(&s) {
                 let scores = get_scores(self.c_puct, &s, node);

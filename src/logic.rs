@@ -110,7 +110,7 @@ pub struct ModifierParameter
 
 pub struct Modifier
 {
-    pub setting : ModifierParameter,
+    pub mod_param : ModifierParameter,
     pub rng : Xorshift128,
 }
 
@@ -352,7 +352,7 @@ impl State {
     fn next_turn(&self,modifier:&mut Modifier) -> State {
         State {
             turn: if self.is_terminated() { self.turn } else { self.turn + 1 },
-            durability: if self.manipulation == 0 || self.is_terminated() { self.durability } else { min(self.durability+5,modifier.setting.max_durability) },
+            durability: if self.manipulation == 0 || self.is_terminated() { self.durability } else { min(self.durability+5,modifier.mod_param.max_durability) },
             veneration: decrement_clip(self.veneration),
             waste_not: decrement_clip(self.waste_not),
             great_strides: decrement_clip(self.great_strides),
@@ -377,9 +377,9 @@ impl State {
 
     // 作業に対する品質報酬
     // 情報が無いので、そのまま決め打ちで打ち込んでます
-    fn working_reward(&self, setting:&ModifierParameter, efficiency : f64 ) -> u32 {
+    fn working_reward(&self, mod_param:&ModifierParameter, efficiency : f64 ) -> u32 {
         // 情報が無いのでそのまま決め打ちの数値の対応です。それ以外に対応することになったらやる
-        if setting.work_accuracy != 2769 {
+        if mod_param.work_accuracy != 2769 {
             return 99999;
         }
 
@@ -394,10 +394,10 @@ impl State {
     // こちらの記事が紹介しているcalculatorの内容を参考にしています。
     // https://jp.finalfantasyxiv.com/lodestone/character/29523439/blog/4641394/
     // 完全一致はしませんが、近似値として使えます。完全一致を求めるならば、データシートを作るほうが良いと思う
-    fn quality_reward(&self, setting:&ModifierParameter, efficiency : f64) -> u32 {
+    fn quality_reward(&self, mod_param:&ModifierParameter, efficiency : f64) -> u32 {
         let inner_quiet : f64 = From::from(self.inner_quiet);
-        let process_accuracy : f64 = From::from(setting.process_accuracy);
-        let required_process_accuracy : f64 = From::from(setting.required_process_accuracy);
+        let process_accuracy : f64 = From::from(mod_param.process_accuracy);
+        let required_process_accuracy : f64 = From::from(mod_param.required_process_accuracy);
 
         let f = process_accuracy + process_accuracy * (inner_quiet * 20.0 / 100.0);
         let q1 = f*35.0/100.0 + 35.0;
@@ -409,15 +409,15 @@ impl State {
         return ( q3 * cond_rate * efficiency * buff_rate ) as u32;
     }
 
-    fn add_working(&self, setting:&ModifierParameter, efficiency : f64) -> State {
-        let w = self.working + self.working_reward(&setting,efficiency);
+    fn add_working(&self, mod_param:&ModifierParameter, efficiency : f64) -> State {
+        let w = self.working + self.working_reward(&mod_param,efficiency);
 
-        if w >= setting.max_working {
+        if w >= mod_param.max_working {
             if self.final_appraisal > 0 {
-                State { working:setting.max_working - 1, muscle_memory:0, final_appraisal:0, .. *self } // 最終確認バフを消して完了直前に設定
+                State { working:mod_param.max_working - 1, muscle_memory:0, final_appraisal:0, .. *self } // 最終確認バフを消して完了直前に設定
             }
             else {
-                State { working:setting.max_working, muscle_memory:0, completed: true, .. *self } // 作業完了
+                State { working:mod_param.max_working, muscle_memory:0, completed: true, .. *self } // 作業完了
             }
         }
         else {
@@ -425,9 +425,9 @@ impl State {
         }
     }
 
-    fn add_quality_base(&self, setting:&ModifierParameter, efficiency:f64) -> State {
+    fn add_quality_base(&self, mod_param:&ModifierParameter, efficiency:f64) -> State {
         State {
-            quality: min(self.quality + self.quality_reward(&setting,efficiency), setting.max_quality),
+            quality: min(self.quality + self.quality_reward(&mod_param,efficiency), mod_param.max_quality),
             great_strides: 0,
             .. *self
         }
@@ -448,12 +448,12 @@ impl State {
         State { inner_quiet: inner_quiet, .. *self }
     }
 
-    fn add_quality(&self, setting:&ModifierParameter, efficiency:f64, inner_quiet_stack:u32) -> State {
-        self.add_quality_base(&setting,efficiency).add_inner_quiet(inner_quiet_stack)
+    fn add_quality(&self, mod_param:&ModifierParameter, efficiency:f64, inner_quiet_stack:u32) -> State {
+        self.add_quality_base(&mod_param,efficiency).add_inner_quiet(inner_quiet_stack)
     }
 
-    fn add_quality_byregots(&self, setting:&ModifierParameter) -> State {
-        self.add_quality_base(&setting,1.0 + self.inner_quiet as f64 * 0.2).set_inner_quiet(0)
+    fn add_quality_byregots(&self, mod_param:&ModifierParameter) -> State {
+        self.add_quality_base(&mod_param,1.0 + self.inner_quiet as f64 * 0.2).set_inner_quiet(0)
     }
 
     fn consume_careful_observation(&self) -> State {
@@ -472,12 +472,12 @@ impl State {
         State { durability: if self.durability > q { self.durability - q } else { 0 }, .. *self }
     }
 
-    fn add_durability(&self, x:u32, setting:&ModifierParameter) -> State {
-        State { durability: min(self.durability+x,setting.max_durability), ..*self }
+    fn add_durability(&self, x:u32, mod_param:&ModifierParameter) -> State {
+        State { durability: min(self.durability+x,mod_param.max_durability), ..*self }
     }
 
-    fn add_cp(&self, x:u32, setting:&ModifierParameter) -> State {
-        State { cp: min(self.cp+x,setting.max_cp), ..*self }
+    fn add_cp(&self, x:u32, mod_param:&ModifierParameter) -> State {
+        State { cp: min(self.cp+x,mod_param.max_cp), ..*self }
     }
 
     fn clear_manipulation(&self) -> State {
@@ -566,24 +566,24 @@ impl State {
 
     // 作業
     fn action_basic_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,1.2).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,1.2).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 加工
     fn action_basic_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.0,1).consume_cp(&Action::BasicTouch).consume_durability(10).next_turn(modifier).set_combo_basic_touch().change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,1.0,1).consume_cp(&Action::BasicTouch).consume_durability(10).next_turn(modifier).set_combo_basic_touch().change_condition(modifier).add_time(3)
     }
 
     // マスターズメンド
     fn action_masters_mend(&self, modifier:&mut Modifier) -> State {
-        self.consume_cp(&Action::MastersMend).add_durability(30,&modifier.setting).next_turn(modifier).change_condition(modifier).add_time(2)
+        self.consume_cp(&Action::MastersMend).add_durability(30,&modifier.mod_param).next_turn(modifier).change_condition(modifier).add_time(2)
     }
 
     // ヘイスティタッチ
     fn action_hasty_touch(&self, modifier:&mut Modifier) -> State {
         if modifier.try_random(self.probability(0.5)) {
             // 成功時
-            self.add_quality(&modifier.setting,1.0,1).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+            self.add_quality(&modifier.mod_param,1.0,1).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
         else {
             // 失敗時
@@ -595,7 +595,7 @@ impl State {
     fn action_rapid_synthesis(&self, modifier:&mut Modifier) -> State {
         if modifier.try_random(self.probability(0.5)) {
             // 成功時
-            self.add_working(&modifier.setting,5.0).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+            self.add_working(&modifier.mod_param,5.0).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
         else {
             // 失敗時
@@ -610,7 +610,7 @@ impl State {
 
     // 秘訣
     fn action_trick_of_the_trade(&self, modifier:&mut Modifier) -> State {
-        self.next_turn(modifier).add_cp(20,&modifier.setting).clear_heart_and_soul().change_condition(modifier).add_time(3)
+        self.next_turn(modifier).add_cp(20,&modifier.mod_param).clear_heart_and_soul().change_condition(modifier).add_time(3)
     }
 
     // 倹約
@@ -627,7 +627,7 @@ impl State {
     fn action_standard_touch(&self, modifier:&mut Modifier) -> State {
         // 上級加工へのコンボは直前の中級加工コンボが有効でなければ発動しません
         let combo_basic_touch = self.combo_basic_touch;
-        self.add_quality(&modifier.setting,1.25,1).consume_cp(&Action::StandardTouch).consume_durability(10).next_turn(modifier).set_combo_standard_touch(combo_basic_touch).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,1.25,1).consume_cp(&Action::StandardTouch).consume_durability(10).next_turn(modifier).set_combo_standard_touch(combo_basic_touch).change_condition(modifier).add_time(3)
     }
 
     // グレートストライド
@@ -652,17 +652,17 @@ impl State {
 
     // ビエルゴの祝福
     fn action_byregots_blessing(&self, modifier:&mut Modifier) -> State {
-        self.add_quality_byregots(&modifier.setting).consume_cp(&Action::ByregotsBlessing).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality_byregots(&modifier.mod_param).consume_cp(&Action::ByregotsBlessing).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 集中加工
     fn action_precise_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.5,2).consume_cp(&Action::PreciseTouch).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,1.5,2).consume_cp(&Action::PreciseTouch).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
     }
 
     // 確信
     fn action_muscle_memory(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,3.0).consume_cp(&Action::MuscleMemory).consume_durability(10).next_turn(modifier).set_muscle_memory(5).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,3.0).consume_cp(&Action::MuscleMemory).consume_durability(10).next_turn(modifier).set_muscle_memory(5).change_condition(modifier).add_time(3)
     }
 
     // 設計変更
@@ -672,7 +672,7 @@ impl State {
 
     // 模範作業
     fn action_careful_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,1.8).consume_cp(&Action::CarefulSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,1.8).consume_cp(&Action::CarefulSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // マニピュレーション
@@ -682,14 +682,14 @@ impl State {
 
     // 倹約加工
     fn action_prudent_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.0,1).consume_cp(&Action::PrudentTouch).consume_durability(5).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,1.0,1).consume_cp(&Action::PrudentTouch).consume_durability(5).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 注視作業
     fn action_focused_synthesis(&self, modifier:&mut Modifier) -> State {
         if self.combo_observe || modifier.try_random(self.probability(0.5)) {
             // 成功の場合
-            self.add_working(&modifier.setting,1.5).consume_cp(&Action::FocusedSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+            self.add_working(&modifier.mod_param,1.5).consume_cp(&Action::FocusedSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
         else {
             // 失敗の場合
@@ -701,7 +701,7 @@ impl State {
     fn action_focused_touch(&self, modifier:&mut Modifier) -> State {
         if self.combo_observe || modifier.try_random(self.probability(0.5)) {
             // 成功の場合
-            self.add_quality(&modifier.setting,1.5,1).consume_cp(&Action::FocusedTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+            self.add_quality(&modifier.mod_param,1.5,1).consume_cp(&Action::FocusedTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
         else {
             // 失敗の場合
@@ -711,34 +711,34 @@ impl State {
 
     // 真価
     fn action_reflect(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.0,2).consume_cp(&Action::Reflect).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,1.0,2).consume_cp(&Action::Reflect).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 下地加工
     fn action_preparatory_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,2.0,2).consume_cp(&Action::PreparatoryTouch).consume_durability(20).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,2.0,2).consume_cp(&Action::PreparatoryTouch).consume_durability(20).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 下地作業
     fn action_groundwork(&self, modifier:&mut Modifier) -> State {
         let efficiency = if self.get_required_cp(&Action::Groundwork) < self.durability as u32 { 1.8 } else { 3.6 };
 
-        self.add_working(&modifier.setting,efficiency).consume_cp(&Action::Groundwork).consume_durability(20).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,efficiency).consume_cp(&Action::Groundwork).consume_durability(20).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 精密作業
     fn action_delecate_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,1.0).add_quality(&modifier.setting,1.0,1).consume_cp(&Action::DelicateSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,1.0).add_quality(&modifier.mod_param,1.0,1).consume_cp(&Action::DelicateSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 集中作業
     fn action_intensive_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,4.0).consume_cp(&Action::IntensiveSynthesis).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,4.0).consume_cp(&Action::IntensiveSynthesis).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
     }
 
     // 上級加工
     fn action_advanced_touch(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.5,1).consume_cp(&Action::AdvancedTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,1.5,1).consume_cp(&Action::AdvancedTouch).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 一心不乱
@@ -748,12 +748,12 @@ impl State {
 
     // 倹約作業
     fn action_prudent_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.setting,1.8).consume_cp(&Action::PrudentSynthesis).consume_durability(5).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,1.8).consume_cp(&Action::PrudentSynthesis).consume_durability(5).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 匠の神業
     fn action_trained_finesse(&self, modifier:&mut Modifier) -> State {
-        self.add_quality(&modifier.setting,1.0,1).consume_cp(&Action::TrainedFinesse).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_quality(&modifier.mod_param,1.0,1).consume_cp(&Action::TrainedFinesse).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // アクション取得

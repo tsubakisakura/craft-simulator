@@ -23,15 +23,15 @@ impl OneHotConvertible for bool {
 }
 
 // ターンが絡むものは全て均等に10で割ることにします(各ノードの影響を均等にする意図)
-pub fn encode_state( s:&State, setting:&ModifierParameter ) -> StateVector {
+pub fn encode_state( s:&State, mod_param:&ModifierParameter ) -> StateVector {
     [
         s.turn as f32 / 128.0,
         s.time as f32 / 256.0,
         s.completed.to_onehot(), // 要らない気がする
-        s.working as f32 / setting.max_working as f32,
-        s.quality as f32 / setting.max_quality as f32,
-        s.durability as f32 / setting.max_durability as f32,
-        s.cp as f32 / setting.max_cp as f32,
+        s.working as f32 / mod_param.max_working as f32,
+        s.quality as f32 / mod_param.max_quality as f32,
+        s.durability as f32 / mod_param.max_durability as f32,
+        s.cp as f32 / mod_param.max_cp as f32,
 
         s.inner_quiet as f32 / 10.0,
         s.inner_quiet.to_onehot(),
@@ -69,13 +69,13 @@ pub fn encode_state( s:&State, setting:&ModifierParameter ) -> StateVector {
 
 // 配列からテンソル作成
 // あまり効率はよくない
-pub fn encode_state_batch( states:&[State], setting:&ModifierParameter ) -> Tensor {
+pub fn encode_state_batch( states:&[State], mod_param:&ModifierParameter ) -> Tensor {
 
     let mut state_vec = vec!{};
     state_vec.resize( states.len() * STATE_NUM, 0.0 );
 
     for i in 0..states.len() {
-        state_vec[i*STATE_NUM..(i+1)*STATE_NUM].copy_from_slice( &encode_state(&states[i],setting) );
+        state_vec[i*STATE_NUM..(i+1)*STATE_NUM].copy_from_slice( &encode_state(&states[i],mod_param) );
     }
 
     Tensor::of_slice(&state_vec).reshape(&[states.len() as i64, STATE_NUM as i64])

@@ -141,16 +141,16 @@ impl WriteRecord for EvaluationWriter {
 
 pub struct GenerationWriter {
     mysql_pool : Arc<Mutex<Pool>>,
-    setting : ModifierParameter,
+    mod_param : ModifierParameter,
     plays_per_write : usize,
     buffer : Vec<Record>,
 }
 
 impl GenerationWriter {
-    pub fn new( mysql_pool:Arc<Mutex<Pool>>, plays_per_write:usize, setting:ModifierParameter ) -> GenerationWriter {
+    pub fn new( mysql_pool:Arc<Mutex<Pool>>, plays_per_write:usize, mod_param:ModifierParameter ) -> GenerationWriter {
         GenerationWriter {
             mysql_pool : mysql_pool,
-            setting : setting,
+            mod_param : mod_param,
             plays_per_write : plays_per_write,
             buffer : vec!{},
         }
@@ -166,7 +166,7 @@ fn write_samples<W:Write,F:Formatter>( writer:&mut W, formatter:&F, record:&Reco
     Ok(())
 }
 
-fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, setting:&ModifierParameter, buf:&Vec<Record> ) {
+fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, mod_param:&ModifierParameter, buf:&Vec<Record> ) {
 
     // アップロードするファイル名を決定します
     let ulid = Ulid::new().to_string();
@@ -177,7 +177,7 @@ fn write_samples_flush_buffer( mysql_pool:&Arc<Mutex<Pool>>, setting:&ModifierPa
     {
         let file = std::fs::File::create("sample.txt.bz2").unwrap();
         let mut writer = BzEncoder::new(BufWriter::new(file), Compression::best());
-        let formatter = TsvFormatter { setting:setting.clone()};
+        let formatter = TsvFormatter { mod_param:mod_param.clone()};
 
         for x in buf {
             write_samples( &mut writer, &formatter, x ).unwrap()
@@ -209,7 +209,7 @@ impl WriteRecord for GenerationWriter {
         self.buffer.push(record);
 
         if self.buffer.len() >= self.plays_per_write {
-            write_samples_flush_buffer( &self.mysql_pool, &self.setting, &self.buffer );
+            write_samples_flush_buffer( &self.mysql_pool, &self.mod_param, &self.buffer );
             self.buffer.clear();
         }
 
@@ -218,7 +218,7 @@ impl WriteRecord for GenerationWriter {
 
     fn flush(&mut self) -> Result<()> {
         if self.buffer.len() > 0 {
-            write_samples_flush_buffer( &self.mysql_pool, &self.setting, &self.buffer );
+            write_samples_flush_buffer( &self.mysql_pool, &self.mod_param, &self.buffer );
             self.buffer.clear();
         }
 

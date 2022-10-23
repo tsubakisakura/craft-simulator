@@ -57,7 +57,7 @@ impl Predictor {
         }
     }
 
-    pub fn predict_batch(&mut self, setting:&ModifierParameter) {
+    pub fn predict_batch(&mut self, mod_param:&ModifierParameter) {
         let mut tasks = self.tasks.borrow_mut();
 
         for (name,task_vec) in tasks.iter() {
@@ -65,7 +65,7 @@ impl Predictor {
             // ここで見つからない場合はロジックがおかしいので処理を見直します
             let network = self.networks.get(name).expect("not found network");
             let (source,results) : (Vec<State>, Vec<PredictResult>) = task_vec.iter().cloned().unzip();
-            let dest = network.1.predict_batch( &source, setting ).unwrap();
+            let dest = network.1.predict_batch( &source, mod_param ).unwrap();
 
             for (result,d) in results.iter().zip( dest.iter() ) {
                 result.res.set(Poll::Ready(*d))

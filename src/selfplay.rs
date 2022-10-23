@@ -27,7 +27,7 @@ pub enum WriterParameter {
 
 #[derive(Debug,Clone)]
 pub struct EpisodeParameter {
-    pub setting : ModifierParameter,
+    pub mod_param : ModifierParameter,
     pub mcts_simulation_num : u32,
     pub alpha : f32,
     pub eps : f32,
@@ -80,10 +80,10 @@ async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, pre
 
     let seed : u64 = From::from( SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Failed to get UNIXTIME").subsec_nanos() );
     let seeds = [seed, seed];
-    let mut modifier = Modifier { setting:param.setting.clone(), rng:SeedableRng::from_seed(&seeds[..]) };
+    let mut modifier = Modifier { mod_param:param.mod_param.clone(), rng:SeedableRng::from_seed(&seeds[..]) };
 
     let mut samples = vec![];
-    let mut state = param.setting.initial_state();
+    let mut state = param.mod_param.initial_state();
 
     // コンテキストを１手ごとに初期化するかゲーム中で完全記憶するのが良いかが分かりませんが、一旦ここにしておきます。
     // 多分こっちのほうが良いんだけどメモリは使います
@@ -105,7 +105,7 @@ async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, pre
     }
 
     // 最終的な報酬を計算します。
-    let reward = get_reward(&state,&modifier.setting);
+    let reward = get_reward(&state,&modifier.mod_param);
 
     // 結果を返す
     Record { samples:samples, name:graph_filename.clone(), last_state:state, reward:reward }
@@ -160,7 +160,7 @@ fn selfplay_thread( ctx:ThreadContext ) {
 
         for _ in 0..5 {
             executor.poll_all();
-            predictor.predict_batch( &co_ctx.episode_param.setting );
+            predictor.predict_batch( &co_ctx.episode_param.mod_param );
         }
     }
 }
@@ -222,7 +222,7 @@ fn write_records<W:WriteRecord>( mut writer:W, receiver:Receiver<Record> ) {
 fn write_thread( mysql_pool:Arc<Mutex<Pool>>, param:SelfPlayParameter, receiver:Receiver<Record> ) {
     match &param.writer_param {
         WriterParameter::Evaluation => write_records( EvaluationWriter::new( mysql_pool, param.plays_per_write ), receiver ),
-        WriterParameter::Generation => write_records( GenerationWriter::new( mysql_pool, param.plays_per_write, param.episode_param.setting.clone() ), receiver ),
+        WriterParameter::Generation => write_records( GenerationWriter::new( mysql_pool, param.plays_per_write, param.episode_param.mod_param.clone() ), receiver ),
     };
 }
 
