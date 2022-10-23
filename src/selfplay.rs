@@ -83,7 +83,7 @@ async fn selfplay_craftone( param:&EpisodeParameter, graph_filename:&String, pre
     let mut modifier = Modifier { mod_param:param.mod_param.clone(), rng:SeedableRng::from_seed(&seeds[..]) };
 
     let mut samples = vec![];
-    let mut state = param.mod_param.initial_state();
+    let mut state = State::new(&param.mod_param);
 
     // コンテキストを１手ごとに初期化するかゲーム中で完全記憶するのが良いかが分かりませんが、一旦ここにしておきます。
     // 多分こっちのほうが良いんだけどメモリは使います

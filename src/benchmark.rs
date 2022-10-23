@@ -15,7 +15,7 @@ pub fn run_benchmark(param:BenchmarkParameter) {
     let vs = tch::nn::VarStore::new(tch::Device::Cpu);
     let network = FullyConnectedNetwork::new(&vs.root(), 4, 128);
 
-    let states : Vec<State> = (0..param.batch_size).map( |_| param.mod_param.initial_state() ).collect();
+    let states : Vec<State> = (0..param.batch_size).map( |_| State::new(&param.mod_param) ).collect();
     let mut remain = param.plays_per_write;
 
     while remain > 0 {

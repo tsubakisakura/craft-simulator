@@ -221,16 +221,28 @@ impl ModifierParameter {
             max_cp : setting.max_cp,
         }
     }
+}
 
-    pub fn initial_state(&self) -> State {
+impl Modifier {
+    fn try_random(&mut self, success_rate : f32) -> bool {
+        self.rng.next_f32() < success_rate
+    }
+}
+
+fn decrement_clip( x : u32 ) -> u32 {
+    if x > 0 { x - 1 } else { 0 }
+}
+
+impl State {
+    pub fn new(mod_param:&ModifierParameter) -> Self {
         State {
             turn:1,
             time:0,
             completed:false,
             working:0,
             quality:0,
-            durability:self.max_durability,
-            cp:self.max_cp,
+            durability:mod_param.max_durability,
+            cp:mod_param.max_cp,
             inner_quiet:0,
             careful_observation:3,
             waste_not:0,
@@ -248,19 +260,7 @@ impl ModifierParameter {
             condition:Condition::Standard,
         }
     }
-}
 
-impl Modifier {
-    fn try_random(&mut self, success_rate : f32) -> bool {
-        self.rng.next_f32() < success_rate
-    }
-}
-
-fn decrement_clip( x : u32 ) -> u32 {
-    if x > 0 { x - 1 } else { 0 }
-}
-
-impl State {
     pub fn is_destroyed(&self) -> bool {
         !self.completed && self.durability <= 0
     }
