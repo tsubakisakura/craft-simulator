@@ -1,7 +1,8 @@
 use core::cmp::min;
 
 use super::network2::*;
-use super::logic::{State,ModifierParameter};
+use super::logic::State;
+use super::setting::ModifierParameter;
 
 pub struct BenchmarkParameter {
     pub mod_param:ModifierParameter,

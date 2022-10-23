@@ -1,6 +1,7 @@
 ﻿use tch::*;
 
-use super::logic::*;
+use super::logic::{State,Condition,ACTION_NUM};
+use super::setting::ModifierParameter;
 use super::mcts::*;
 
 pub const STATE_NUM : usize = 36;

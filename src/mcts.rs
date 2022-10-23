@@ -1,5 +1,6 @@
 ﻿use std::collections::HashMap;
-use super::logic::{State,Action,Modifier,ModifierParameter,ACTION_NUM};
+use super::logic::{State,Action,Modifier,ACTION_NUM};
+use super::setting::ModifierParameter;
 use super::predictor::*;
 use num::FromPrimitive;
 use xorshift::{Rng,Xorshift128};

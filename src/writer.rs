@@ -11,7 +11,7 @@ use super::gcs::*;
 
 use super::formatter::*;
 use super::selfplay::*;
-use super::logic::ModifierParameter;
+use super::setting::ModifierParameter;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Trait

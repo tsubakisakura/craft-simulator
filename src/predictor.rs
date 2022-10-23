@@ -6,7 +6,8 @@ use std::cell::{Cell,RefCell};
 use std::rc::Rc;
 
 use super::mcts::ActionVector;
-use super::logic::{State,ModifierParameter};
+use super::logic::State;
+use super::setting::ModifierParameter;
 use super::network2::*;
 
 // 個々のNNが予測した結果を保存するための場所

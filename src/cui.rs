@@ -1,6 +1,7 @@
 ﻿
 use std::time::SystemTime;
-use super::logic::{Action,Modifier,ModifierParameter,State,Condition,get_technical_point};
+use super::logic::{Action,Modifier,State,Condition,get_technical_point};
+use super::setting::ModifierParameter;
 use xorshift::{SeedableRng};
 
 pub struct CuiParameter {

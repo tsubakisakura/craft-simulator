@@ -16,8 +16,9 @@ mod benchmark;
 mod executor;
 mod predictor;
 mod replay;
+mod setting;
 
-use logic::{Setting,ModifierParameter};
+use setting::{Setting,ModifierParameter};
 use argh::FromArgs;
 use selfplay::{WriterParameter,EpisodeParameter,SelfPlayParameter};
 use selector::Selector;

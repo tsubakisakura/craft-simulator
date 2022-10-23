@@ -3,7 +3,8 @@ use std::error::Error;
 use tch::*;
 use tch::nn::*;
 
-use super::logic::*;
+use super::logic::{State,ACTION_NUM};
+use super::setting::ModifierParameter;
 use super::network::{encode_state_batch,decode_pv_batch};
 use super::mcts::*;
 

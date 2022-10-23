@@ -11,7 +11,8 @@ use serde::{Serialize,Deserialize};
 use xorshift::{SeedableRng};
 
 use super::selector::{Selector,UCB1Context};
-use super::logic::{State,Action,Modifier,ModifierParameter};
+use super::logic::{State,Action,Modifier};
+use super::setting::ModifierParameter;
 use super::mcts::{MCTSContext,ActionVector,select_action_weighted,select_action_greedy,get_reward};
 use super::writer::*;
 use super::cache::*;

@@ -1,6 +1,6 @@
 ﻿
 use super::selfplay::{Sample,Record};
-use super::logic::ModifierParameter;
+use super::setting::ModifierParameter;
 use super::network::encode_state;
 
 pub trait Formatter {
