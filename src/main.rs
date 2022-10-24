@@ -18,7 +18,7 @@ mod predictor;
 mod replay;
 mod setting;
 
-use setting::{Setting,ModifierParameter};
+use setting::{ModifierParameter,initial_setting};
 use argh::FromArgs;
 use selfplay::{WriterParameter,EpisodeParameter,SelfPlayParameter};
 use selector::Selector;
@@ -167,20 +167,6 @@ struct SubCommandReplay {
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name="cui", description="CUI for crafting")]
 struct SubCommandCui {
-}
-
-fn initial_setting() -> Setting {
-    Setting {
-        max_working:12046,
-        max_quality:81447,
-        max_durability:55,
-        work_accuracy:2769,
-        //process_accuracy:2840,
-        process_accuracy:2840 + 70,
-        required_process_accuracy:2540,
-        //max_cp:569,
-        max_cp:569 + 72 + 16,
-    }
 }
 
 fn get_selector( ucb1:Option<f64>, optimistic:Option<usize>, greedy:Option<usize> ) -> Option<Selector> {

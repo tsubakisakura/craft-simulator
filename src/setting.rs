@@ -22,6 +22,20 @@ pub struct ModifierParameter
     pub max_cp : u32,                     // 初期CP
 }
 
+pub fn initial_setting() -> Setting {
+    Setting {
+        max_working:12046,
+        max_quality:81447,
+        max_durability:55,
+        work_accuracy:2769,
+        //process_accuracy:2840,
+        process_accuracy:2840 + 70,
+        required_process_accuracy:2540,
+        //max_cp:569,
+        max_cp:569 + 72 + 16,
+    }
+}
+
 impl ModifierParameter {
     pub fn new(setting:&Setting) -> ModifierParameter {
         ModifierParameter {
