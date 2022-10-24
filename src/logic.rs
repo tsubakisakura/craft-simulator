@@ -334,7 +334,7 @@ impl State {
 
     // 作業に対する品質報酬
     // 情報が無いので、そのまま決め打ちで打ち込んでます
-    fn working_reward(&self, mod_param:&ModifierParameter, efficiency : f64 ) -> u32 {
+    fn working_reward(&self, mod_param:&ModifierParameter, efficiency : u32 ) -> u32 {
         // 情報が無いのでそのまま決め打ちの数値の対応です。それ以外に対応することになったらやる
         if mod_param.work_accuracy != 2769 {
             return 99999;
@@ -344,7 +344,7 @@ impl State {
         let cond_rate = if self.condition == Condition::HighProgress { 1.5 } else { 1.0 };
         let buff_rate = 1.0 + if self.veneration > 0 { 0.5 } else { 0.0 } + if self.muscle_memory > 0 { 1.0 } else { 0.0 };
 
-        return ( q * cond_rate * efficiency * buff_rate ) as u32;
+        return ( q * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
     }
 
     // 効率に対する品質報酬
@@ -366,7 +366,7 @@ impl State {
         return ( q3 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
     }
 
-    fn add_working(&self, mod_param:&ModifierParameter, efficiency : f64) -> State {
+    fn add_working(&self, mod_param:&ModifierParameter, efficiency : u32) -> State {
         let w = self.working + self.working_reward(&mod_param,efficiency);
 
         if w >= mod_param.max_working {
@@ -523,7 +523,7 @@ impl State {
 
     // 作業
     fn action_basic_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.mod_param,1.2).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,120).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 加工
@@ -552,7 +552,7 @@ impl State {
     fn action_rapid_synthesis(&self, modifier:&mut Modifier) -> State {
         if modifier.try_random(self.probability(0.5)) {
             // 成功時
-            self.add_working(&modifier.mod_param,5.0).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+            self.add_working(&modifier.mod_param,500).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
         else {
             // 失敗時
@@ -619,7 +619,7 @@ impl State {
 
     // 確信
     fn action_muscle_memory(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.mod_param,3.0).consume_cp(&Action::MuscleMemory).consume_durability(10).next_turn(modifier).set_muscle_memory(5).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,300).consume_cp(&Action::MuscleMemory).consume_durability(10).next_turn(modifier).set_muscle_memory(5).change_condition(modifier).add_time(3)
     }
 
     // 設計変更
@@ -629,7 +629,7 @@ impl State {
 
     // 模範作業
     fn action_careful_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.mod_param,1.8).consume_cp(&Action::CarefulSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,180).consume_cp(&Action::CarefulSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // マニピュレーション
@@ -646,7 +646,7 @@ impl State {
     fn action_focused_synthesis(&self, modifier:&mut Modifier) -> State {
         if self.combo_observe || modifier.try_random(self.probability(0.5)) {
             // 成功の場合
-            self.add_working(&modifier.mod_param,1.5).consume_cp(&Action::FocusedSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+            self.add_working(&modifier.mod_param,150).consume_cp(&Action::FocusedSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
         }
         else {
             // 失敗の場合
@@ -678,19 +678,19 @@ impl State {
 
     // 下地作業
     fn action_groundwork(&self, modifier:&mut Modifier) -> State {
-        let efficiency = if self.get_required_cp(&Action::Groundwork) < self.durability as u32 { 1.8 } else { 3.6 };
+        let efficiency = if self.get_required_cp(&Action::Groundwork) < self.durability as u32 { 180 } else { 360 };
 
         self.add_working(&modifier.mod_param,efficiency).consume_cp(&Action::Groundwork).consume_durability(20).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 精密作業
     fn action_delecate_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.mod_param,1.0).add_quality(&modifier.mod_param,100,1).consume_cp(&Action::DelicateSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,100).add_quality(&modifier.mod_param,100,1).consume_cp(&Action::DelicateSynthesis).consume_durability(10).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 集中作業
     fn action_intensive_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.mod_param,4.0).consume_cp(&Action::IntensiveSynthesis).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,400).consume_cp(&Action::IntensiveSynthesis).consume_durability(10).next_turn(modifier).clear_heart_and_soul().change_condition(modifier).add_time(3)
     }
 
     // 上級加工
@@ -705,7 +705,7 @@ impl State {
 
     // 倹約作業
     fn action_prudent_synthesis(&self, modifier:&mut Modifier) -> State {
-        self.add_working(&modifier.mod_param,1.8).consume_cp(&Action::PrudentSynthesis).consume_durability(5).next_turn(modifier).change_condition(modifier).add_time(3)
+        self.add_working(&modifier.mod_param,180).consume_cp(&Action::PrudentSynthesis).consume_durability(5).next_turn(modifier).change_condition(modifier).add_time(3)
     }
 
     // 匠の神業
