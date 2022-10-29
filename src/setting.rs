@@ -13,6 +13,7 @@ pub struct Setting
 pub trait AdvanceTable
 {
     fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32;
+    fn quality_reward(&self, efficiency:u32, high_quality:bool, innovation:bool, grate_strides:bool, inner_quiet:u32) -> u32;
 }
 
 #[derive(Debug,Clone)]
@@ -67,5 +68,24 @@ impl AdvanceTable for ModifierParameter {
         let buff_rate = 1.0 + if veneration { 0.5 } else { 0.0 } + if muscle_memory { 1.0 } else { 0.0 };
 
         return ( q * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
+    }
+
+    // 効率に対する品質報酬
+    // こちらの記事が紹介しているcalculatorの内容を参考にしています。
+    // https://jp.finalfantasyxiv.com/lodestone/character/29523439/blog/4641394/
+    // 完全一致はしませんが、近似値として使えます。完全一致を求めるならば、データシートを作るほうが良いと思う
+    fn quality_reward(&self, efficiency: u32, high_quality: bool, innovation: bool, grate_strides: bool, inner_quiet: u32 ) -> u32 {
+        let iq : f64 = From::from(inner_quiet);
+        let process_accuracy : f64 = From::from(self.process_accuracy);
+        let required_process_accuracy : f64 = From::from(self.required_process_accuracy);
+
+        let f = process_accuracy + process_accuracy * (iq * 20.0 / 100.0);
+        let q1 = f*35.0/100.0 + 35.0;
+        let q2 = q1 * (f + 10000.0) / (required_process_accuracy + 10000.0);
+        let q3 = q2 * 60.0 / 100.0;
+        let cond_rate = if high_quality { 1.5 } else { 1.0 };
+        let buff_rate = 1.0 + if grate_strides { 1.0 } else { 0.0 } + if innovation { 0.5 } else { 0.0 };
+
+        return ( q3 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
     }
 }

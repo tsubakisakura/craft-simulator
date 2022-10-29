@@ -332,25 +332,6 @@ impl State {
         if self.condition == Condition::Stable { x+0.25 } else { x }
     }
 
-    // 効率に対する品質報酬
-    // こちらの記事が紹介しているcalculatorの内容を参考にしています。
-    // https://jp.finalfantasyxiv.com/lodestone/character/29523439/blog/4641394/
-    // 完全一致はしませんが、近似値として使えます。完全一致を求めるならば、データシートを作るほうが良いと思う
-    fn quality_reward(&self, mod_param:&ModifierParameter, efficiency : u32) -> u32 {
-        let inner_quiet : f64 = From::from(self.inner_quiet);
-        let process_accuracy : f64 = From::from(mod_param.process_accuracy);
-        let required_process_accuracy : f64 = From::from(mod_param.required_process_accuracy);
-
-        let f = process_accuracy + process_accuracy * (inner_quiet * 20.0 / 100.0);
-        let q1 = f*35.0/100.0 + 35.0;
-        let q2 = q1 * (f + 10000.0) / (required_process_accuracy + 10000.0);
-        let q3 = q2 * 60.0 / 100.0;
-        let cond_rate = if self.condition == Condition::HighQuality { 1.5 } else { 1.0 };
-        let buff_rate = 1.0 + if self.great_strides > 0 { 1.0 } else { 0.0 } + if self.innovation > 0 { 0.5 } else { 0.0 };
-
-        return ( q3 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
-    }
-
     fn add_working(&self, mod_param:&ModifierParameter, efficiency : u32) -> State {
         let w = self.working + mod_param.working_reward(efficiency, self.condition == Condition::HighProgress, self.veneration > 0, self.muscle_memory > 0);
 
@@ -369,7 +350,7 @@ impl State {
 
     fn add_quality_base(&self, mod_param:&ModifierParameter, efficiency:u32) -> State {
         State {
-            quality: min(self.quality + self.quality_reward(&mod_param,efficiency), mod_param.max_quality),
+            quality: min(self.quality + mod_param.quality_reward(efficiency, self.condition == Condition::HighQuality, self.innovation > 0, self.great_strides > 0, self.inner_quiet), mod_param.max_quality),
             great_strides: 0,
             .. *self
         }
