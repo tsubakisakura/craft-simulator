@@ -17,15 +17,21 @@ pub trait AdvanceTable
 }
 
 #[derive(Debug,Clone)]
+pub struct ApproximationTable
+{
+    pub work_accuracy : u32,              // 作業精度
+    pub process_accuracy : u32,           // 加工精度
+    pub required_process_accuracy : u32,  // 必要加工精度
+}
+
+#[derive(Debug,Clone)]
 pub struct ModifierParameter
 {
     pub max_working : u32,                // 必要工数
     pub max_quality : u32,                // 品質上限
     pub max_durability : u32,             // 初期耐久
-    pub work_accuracy : u32,              // 作業精度
-    pub process_accuracy : u32,           // 加工精度
-    pub required_process_accuracy : u32,  // 必要加工精度
     pub max_cp : u32,                     // 初期CP
+    pub advance_table : ApproximationTable,
 }
 
 pub fn initial_setting() -> Setting {
@@ -48,15 +54,17 @@ impl ModifierParameter {
             max_working : setting.max_working,
             max_quality : setting.max_quality,
             max_durability : setting.max_durability,
-            work_accuracy : setting.work_accuracy,
-            process_accuracy : setting.process_accuracy,
-            required_process_accuracy : setting.required_process_accuracy,
             max_cp : setting.max_cp,
+            advance_table : ApproximationTable {
+                work_accuracy : setting.work_accuracy,
+                process_accuracy : setting.process_accuracy,
+                required_process_accuracy : setting.required_process_accuracy,
+            }
         }
     }
 }
 
-impl AdvanceTable for ModifierParameter {
+impl AdvanceTable for ApproximationTable {
     fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
         // 情報が無いのでそのまま決め打ちの数値の対応です。それ以外に対応することになったらやる
         if self.work_accuracy != 2769 {
