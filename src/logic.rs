@@ -1,7 +1,7 @@
 ﻿
 extern crate xorshift;
 
-use super::setting::ModifierParameter;
+use super::setting::{ModifierParameter,AdvanceTable};
 use serde::{Serialize,Deserialize};
 use std::cmp::min;
 use std::hash::Hash;
@@ -332,21 +332,6 @@ impl State {
         if self.condition == Condition::Stable { x+0.25 } else { x }
     }
 
-    // 作業に対する品質報酬
-    // 情報が無いので、そのまま決め打ちで打ち込んでます
-    fn working_reward(&self, mod_param:&ModifierParameter, efficiency : u32 ) -> u32 {
-        // 情報が無いのでそのまま決め打ちの数値の対応です。それ以外に対応することになったらやる
-        if mod_param.work_accuracy != 2769 {
-            return 99999;
-        }
-
-        let q = 472.0;
-        let cond_rate = if self.condition == Condition::HighProgress { 1.5 } else { 1.0 };
-        let buff_rate = 1.0 + if self.veneration > 0 { 0.5 } else { 0.0 } + if self.muscle_memory > 0 { 1.0 } else { 0.0 };
-
-        return ( q * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
-    }
-
     // 効率に対する品質報酬
     // こちらの記事が紹介しているcalculatorの内容を参考にしています。
     // https://jp.finalfantasyxiv.com/lodestone/character/29523439/blog/4641394/
@@ -367,7 +352,7 @@ impl State {
     }
 
     fn add_working(&self, mod_param:&ModifierParameter, efficiency : u32) -> State {
-        let w = self.working + self.working_reward(&mod_param,efficiency);
+        let w = self.working + mod_param.working_reward(efficiency, self.condition == Condition::HighProgress, self.veneration > 0, self.muscle_memory > 0);
 
         if w >= mod_param.max_working {
             if self.final_appraisal > 0 {

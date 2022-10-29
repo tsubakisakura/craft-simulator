@@ -10,6 +10,11 @@ pub struct Setting
     pub max_cp : u32,                     // 初期CP
 }
 
+pub trait AdvanceTable
+{
+    fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32;
+}
+
 #[derive(Debug,Clone)]
 pub struct ModifierParameter
 {
@@ -47,5 +52,20 @@ impl ModifierParameter {
             required_process_accuracy : setting.required_process_accuracy,
             max_cp : setting.max_cp,
         }
+    }
+}
+
+impl AdvanceTable for ModifierParameter {
+    fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
+        // 情報が無いのでそのまま決め打ちの数値の対応です。それ以外に対応することになったらやる
+        if self.work_accuracy != 2769 {
+            return 99999;
+        }
+
+        let q = 472.0;
+        let cond_rate = if high_progress { 1.5 } else { 1.0 };
+        let buff_rate = 1.0 + if veneration { 0.5 } else { 0.0 } + if muscle_memory { 1.0 } else { 0.0 };
+
+        return ( q * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
     }
 }
