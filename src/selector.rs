@@ -3,7 +3,7 @@ use std::sync::{Arc,Mutex};
 use mysql::*;
 use mysql::prelude::*;
 
-use super::network2::*;
+use super::network::*;
 
 #[derive(Debug,Clone)]
 pub enum Selector {

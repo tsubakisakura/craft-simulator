@@ -1,7 +1,7 @@
 ﻿
 use super::selfplay::{Sample,Record};
 use super::setting::ModifierParameter;
-use super::network::encode_state;
+use super::encoding::encode_state;
 
 pub trait Formatter {
     fn format(&self, record:&Record) -> Vec<String>;

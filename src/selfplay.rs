@@ -18,7 +18,7 @@ use super::writer::*;
 use super::cache::*;
 use super::executor::*;
 use super::predictor::*;
-use super::network2::*;
+use super::network::*;
 
 #[derive(Debug,Clone)]
 pub enum WriterParameter {

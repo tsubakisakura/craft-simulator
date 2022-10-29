@@ -1,6 +1,6 @@
 use core::cmp::min;
 
-use super::network2::*;
+use super::network::*;
 use super::logic::State;
 use super::setting::ModifierParameter;
 

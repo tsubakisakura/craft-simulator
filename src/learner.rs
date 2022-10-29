@@ -10,7 +10,7 @@ use tch::nn::*;
 use ulid::*;
 
 use super::gcs::*;
-use super::network2::*;
+use super::network::*;
 use super::logic::*;
 
 pub struct LearnerParameter {

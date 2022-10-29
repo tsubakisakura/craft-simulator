@@ -7,7 +7,7 @@ use tch::*;
 use tch::nn::*;
 
 use super::gcs::*;
-use super::network2::*;
+use super::network::*;
 
 pub struct WeightsCache {
     weights_map : HashMap<String,Arc<(NetworkType,VarStore)>>,

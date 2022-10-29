@@ -5,8 +5,8 @@ mod cui;
 mod selfplay;
 mod mcts;
 mod formatter;
+mod encoding;
 mod network;
-mod network2;
 mod writer;
 mod selector;
 mod gcs;
@@ -24,7 +24,7 @@ use selfplay::{WriterParameter,EpisodeParameter,SelfPlayParameter};
 use selector::Selector;
 use learner::{LearnerParameter};
 use benchmark::BenchmarkParameter;
-use network2::NetworkType;
+use network::NetworkType;
 use cui::{CuiParameter};
 
 #[derive(FromArgs, PartialEq, Debug)]

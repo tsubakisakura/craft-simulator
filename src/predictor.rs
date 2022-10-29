@@ -8,7 +8,7 @@ use std::rc::Rc;
 use super::mcts::ActionVector;
 use super::logic::State;
 use super::setting::ModifierParameter;
-use super::network2::*;
+use super::network::*;
 
 // 個々のNNが予測した結果を保存するための場所
 // PendingおよびReadyがそのまま入っています。実質Optionと一緒。
