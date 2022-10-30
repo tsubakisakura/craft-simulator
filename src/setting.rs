@@ -184,6 +184,6 @@ impl AdvanceTable for SimpleTable {
         let cond_rate = if high_quality { 1.5 } else { 1.0 };
         let buff_rate = 1.0 + if grate_strides { 1.0 } else { 0.0 } + if innovation { 0.5 } else { 0.0 };
 
-        return ( q3 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
+        return ( q3 * cond_rate * buff_rate ) as u32 / 100;
     }
 }
