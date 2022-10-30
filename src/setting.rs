@@ -64,7 +64,7 @@ pub struct ModifierParameter
     pub max_quality : u32,                // 品質上限
     pub max_durability : u32,             // 初期耐久
     pub max_cp : u32,                     // 初期CP
-    pub advance_table : Arc<dyn AdvanceTable + Sync + Send>,
+    pub advance_table : Arc<dyn AdvanceTable + Sync + Send>, // これをArcにしないと多くの関数がGenericになってしまうのでArcにしてます
 }
 
 pub fn initial_setting() -> Setting {
