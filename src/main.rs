@@ -196,7 +196,7 @@ fn with_flamegraph<F: FnOnce()>( f:F ) {
 fn cmd_evaluator( args:SubCommandEvaluator ) {
     let param = SelfPlayParameter {
         episode_param: EpisodeParameter {
-            mod_param:ModifierParameter::new_ishgard_reconstruction_4th(),
+            mod_param:ModifierParameter::new_fountain_of_usouso(),
             mcts_simulation_num:args.mcts_simulation_num,
             alpha:0.15,
             eps:0.0,
@@ -223,7 +223,7 @@ fn cmd_evaluator( args:SubCommandEvaluator ) {
 fn cmd_generator( args:SubCommandGenerator ) {
     let param = SelfPlayParameter {
         episode_param: EpisodeParameter {
-            mod_param:ModifierParameter::new_ishgard_reconstruction_4th(),
+            mod_param:ModifierParameter::new_fountain_of_usouso(),
             mcts_simulation_num:args.mcts_simulation_num,
             alpha:args.alpha,
             eps:args.eps,
@@ -265,7 +265,7 @@ fn cmd_learner( args:SubCommandLearner ) {
 
 fn cmd_benchmark( args:SubCommandBenchmark ) {
     let param = BenchmarkParameter {
-        mod_param:ModifierParameter::new_ishgard_reconstruction_4th(),
+        mod_param:ModifierParameter::new_fountain_of_usouso(),
         batch_size:args.batch_size,
         plays_per_write:args.plays_per_write,
     };
@@ -279,7 +279,7 @@ fn cmd_replay( args: SubCommandReplay ) {
 
 fn cmd_cui( _args:SubCommandCui ) {
     let param = CuiParameter {
-        mod_param:ModifierParameter::new_ishgard_reconstruction_4th(),
+        mod_param:ModifierParameter::new_fountain_of_usouso(),
     };
 
     cui::run_cui(param);
