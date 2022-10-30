@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::collections::HashMap;
 
 #[derive(Debug,Clone)]
 pub struct Setting
@@ -18,12 +19,42 @@ pub trait AdvanceTable
     fn quality_reward(&self, efficiency:u32, high_quality:bool, innovation:bool, grate_strides:bool, inner_quiet:u32) -> u32;
 }
 
+// イシュガルド第四次復興時に利用していたロジックです。
+// 今は使ってないですが残してあります
 #[derive(Debug,Clone)]
 pub struct ApproximationTable
 {
     pub work_accuracy : u32,              // 作業精度
     pub process_accuracy : u32,           // 加工精度
     pub required_process_accuracy : u32,  // 必要加工精度
+}
+
+// 品質計算用のキー値です。
+#[derive(Debug,Clone,Hash,Eq,PartialEq)]
+struct QualityKey
+{
+    // インナークワイエット(0 <= inner_quiet <= 10)
+    inner_quiet : u32,
+
+    // 必要な効率キーは以下の通りです。
+    // 100 : 加工、倹約加工、精密作業、匠の神業、真価、ヘイスティタッチ
+    // 125 : 中級加工
+    // 150 : 上級加工、注視加工、集中加工
+    // 200 : 下地加工
+    // 100 + inner_quiet * 20 (※1 <= inner_quiet <= 10) : ビエルゴの祝福(inner_quietに対応する値だけで良いです。0の時は呼べないので計算不要です。)
+    efficiency : u32,
+}
+
+// 少し手抜きのテーブルです。実測値を使って小さな誤差で計算できます。
+// 高品質・イノベ・グレスト時に僅かですが誤差が発生する場合があります。小数点以下が切り捨てられているためと思われます
+#[derive(Debug,Clone)]
+pub struct SimpleTable
+{
+    // 基本状態の突貫の値を5で割った値を入力します。作業の場合はこの値が分かれば正確に計算できる(と思う、多分)
+    work_base : u32,
+
+    // 高品質・イノベ・グレストがない状態での値を入力します。
+    quality_base : HashMap<QualityKey,u32>,
 }
 
 #[derive(Clone)]
@@ -93,6 +124,23 @@ impl AdvanceTable for ApproximationTable {
         let q1 = f*35.0/100.0 + 35.0;
         let q2 = q1 * (f + 10000.0) / (required_process_accuracy + 10000.0);
         let q3 = q2 * 60.0 / 100.0;
+        let cond_rate = if high_quality { 1.5 } else { 1.0 };
+        let buff_rate = 1.0 + if grate_strides { 1.0 } else { 0.0 } + if innovation { 0.5 } else { 0.0 };
+
+        return ( q3 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
+    }
+}
+
+impl AdvanceTable for SimpleTable {
+    fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
+        let cond_rate = if high_progress { 1.5 } else { 1.0 };
+        let buff_rate = 1.0 + if veneration { 0.5 } else { 0.0 } + if muscle_memory { 1.0 } else { 0.0 };
+
+        return ( self.work_base as f64 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
+    }
+
+    fn quality_reward(&self, efficiency:u32, high_quality:bool, innovation:bool, grate_strides:bool, inner_quiet:u32) -> u32 {
+        let q3 = *self.quality_base.get( &QualityKey { inner_quiet, efficiency } ).expect("undefined key") as f64;
         let cond_rate = if high_quality { 1.5 } else { 1.0 };
         let buff_rate = 1.0 + if grate_strides { 1.0 } else { 0.0 } + if innovation { 0.5 } else { 0.0 };
 
