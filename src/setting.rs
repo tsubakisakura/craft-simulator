@@ -1,18 +1,6 @@
 use std::sync::Arc;
 use std::collections::HashMap;
 
-#[derive(Debug,Clone)]
-pub struct Setting
-{
-    pub max_working : u32,                // 必要工数
-    pub max_quality : u32,                // 品質上限
-    pub max_durability : u32,             // 初期耐久
-    pub work_accuracy : u32,              // 作業精度
-    pub process_accuracy : u32,           // 加工精度
-    pub required_process_accuracy : u32,  // 必要加工精度
-    pub max_cp : u32,                     // 初期CP
-}
-
 pub trait AdvanceTable
 {
     fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32;
@@ -22,11 +10,16 @@ pub trait AdvanceTable
 // イシュガルド第四次復興時に利用していたロジックです。
 // 今は使ってないですが残してあります
 #[derive(Debug,Clone)]
-pub struct ApproximationTable
+struct ApproximationTable
 {
-    pub work_accuracy : u32,              // 作業精度
-    pub process_accuracy : u32,           // 加工精度
-    pub required_process_accuracy : u32,  // 必要加工精度
+    // 基本状態の突貫の値を5で割った値を入力します。作業の場合はこの値が分かれば正確に計算できる(と思う、多分)
+    work_base : u32,
+
+    // 加工精度をそのまま入力します。
+    process_accuracy : u32,
+
+    // 必要加工精度をそのまま入力します。
+    required_process_accuracy : u32,
 }
 
 // 品質計算用のキー値です。
@@ -48,7 +41,7 @@ struct QualityKey
 // 少し手抜きのテーブルです。実測値を使って小さな誤差で計算できます。
 // 高品質・イノベ・グレスト時に僅かですが誤差が発生する場合があります。小数点以下が切り捨てられているためと思われます
 #[derive(Debug,Clone)]
-pub struct SimpleTable
+struct SimpleTable
 {
     // 基本状態の突貫の値を5で割った値を入力します。作業の場合はこの値が分かれば正確に計算できる(と思う、多分)
     work_base : u32,
@@ -67,31 +60,17 @@ pub struct ModifierParameter
     pub advance_table : Arc<dyn AdvanceTable + Sync + Send>, // これをArcにしないと多くの関数がGenericになってしまうのでArcにしてます
 }
 
-pub fn initial_setting() -> Setting {
-    Setting {
-        max_working:12046,
-        max_quality:81447,
-        max_durability:55,
-        work_accuracy:2769,
-        //process_accuracy:2840,
-        process_accuracy:2840 + 70,
-        required_process_accuracy:2540,
-        //max_cp:569,
-        max_cp:569 + 72 + 16,
-    }
-}
-
 impl ModifierParameter {
-    pub fn new(setting:&Setting) -> ModifierParameter {
+    pub fn new_ishgard_reconstruction_4th() -> ModifierParameter {
         ModifierParameter {
-            max_working : setting.max_working,
-            max_quality : setting.max_quality,
-            max_durability : setting.max_durability,
-            max_cp : setting.max_cp,
+            max_working : 12046,
+            max_quality : 81447,
+            max_durability : 55,
+            max_cp : 569 + 72 + 16,
             advance_table : Arc::new( ApproximationTable {
-                work_accuracy : setting.work_accuracy,
-                process_accuracy : setting.process_accuracy,
-                required_process_accuracy : setting.required_process_accuracy,
+                work_base : 472, // work_accuracy == 2769
+                process_accuracy : 2840 + 70,
+                required_process_accuracy : 2540,
             })
         }
     }
@@ -99,16 +78,10 @@ impl ModifierParameter {
 
 impl AdvanceTable for ApproximationTable {
     fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
-        // 情報が無いのでそのまま決め打ちの数値の対応です。それ以外に対応することになったらやる
-        if self.work_accuracy != 2769 {
-            return 99999;
-        }
-
-        let q = 472.0;
         let cond_rate = if high_progress { 1.5 } else { 1.0 };
         let buff_rate = 1.0 + if veneration { 0.5 } else { 0.0 } + if muscle_memory { 1.0 } else { 0.0 };
 
-        return ( q * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
+        return ( self.work_base as f64 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
     }
 
     // 効率に対する品質報酬
