@@ -68,6 +68,7 @@ impl ModifierParameter {
     // 作業精度2769
     // 加工精度2840
     // maxcp 569
+    #[allow(dead_code)]
     pub fn new_ishgard_reconstruction_4th() -> ModifierParameter {
         ModifierParameter {
             max_working : 12046,
@@ -88,6 +89,7 @@ impl ModifierParameter {
     // 作業精度3738
     // 加工精度3768
     // maxcp 588
+    #[allow(dead_code)]
     pub fn new_fountain_of_usouso() -> ModifierParameter {
 
         // 横軸100,125,150,200,ビエルゴ
