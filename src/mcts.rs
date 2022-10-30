@@ -124,19 +124,16 @@ pub fn get_reward(s:&State,mod_param:&ModifierParameter) -> f32 {
         let quality_reward = s.quality as f32 / mod_param.max_quality as f32;
 
         // ターン(タイム)ボーナス[0,1]
-        //let b = lerp_clip(60.0,20.0,s.turn as f32) * lerp_clip(81000.0,81400.0,s.quality as f32);
-        //let b = if s.quality == mod_param.max_quality { lerp_clip(60.0,20.0,s.turn as f32) } else { 0.0 };
         let time_reward = lerp_clip(150.0,50.0,s.time as f32);
 
         // max品質ボーナス
-        let max_reward = if s.quality == mod_param.max_quality { 1.0 } else { 0.0 };
+        let threshold_reward = if s.quality >= mod_param.max_quality { 1.0 } else { 0.0 };
 
-        // 品質とターンボーナスのマージ用定数
-        //let t = 0.9;
-        //t*q + (1.0-t)*b
+        // 品質ボーナス割合は計算で求めます
+        let quality_t = 1.0 - mod_param.bonus_time_t - mod_param.bonus_threshold_t;
 
         // 結果は重みづけでマージ
-        quality_reward*0.35 + time_reward*0.15 + max_reward*0.5
+        quality_reward*quality_t + time_reward*mod_param.bonus_time_t + threshold_reward*mod_param.bonus_threshold_t
     }
 }
 

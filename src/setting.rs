@@ -58,6 +58,9 @@ pub struct ModifierParameter
     pub max_durability : u32,             // 初期耐久
     pub max_cp : u32,                     // 初期CP
     pub advance_table : Arc<dyn AdvanceTable + Sync + Send>, // これをArcにしないと多くの関数がGenericになってしまうのでArcにしてます
+    pub bonus_time_t : f32,               // 時間ボーナス割合
+    pub bonus_threshold_t : f32,          // 閾値ボーナス割合
+    pub bonus_threshold : u32,            // 閾値ボーナス最低値
 }
 
 impl ModifierParameter {
@@ -75,7 +78,10 @@ impl ModifierParameter {
                 work_base : 472,
                 process_accuracy : 2840 + 70,
                 required_process_accuracy : 2540,
-            })
+            }),
+            bonus_time_t : 0.15,
+            bonus_threshold_t : 0.50,
+            bonus_threshold : 81447, // max値の時のみ有効
         }
     }
 
@@ -127,7 +133,10 @@ impl ModifierParameter {
             advance_table : Arc::new( SimpleTable {
                 work_base : 209,
                 quality_base : table,
-            })
+            }),
+            bonus_time_t : 0.05,
+            bonus_threshold_t : 0.80,
+            bonus_threshold : 13500, // ウソウソの泉作成要件
         }
     }
 }
