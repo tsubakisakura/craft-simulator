@@ -26,7 +26,7 @@ pub enum WriterParameter {
     Generation,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Clone)]
 pub struct EpisodeParameter {
     pub mod_param : ModifierParameter,
     pub mcts_simulation_num : u32,
@@ -35,7 +35,7 @@ pub struct EpisodeParameter {
     pub start_greedy_turn : u32,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Clone)]
 pub struct SelfPlayParameter {
     pub episode_param : EpisodeParameter,
     pub selector : Selector,
@@ -283,8 +283,6 @@ fn run_simulation(param:&SelfPlayParameter ) {
 }
 
 pub fn run(param:&SelfPlayParameter) {
-
-    eprintln!("selfplay parameters:{:?}", param);
 
     // 強制シングルスレッドの設定にします。
     // 現状調査では1が最も高速らしいです。

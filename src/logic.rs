@@ -1,7 +1,7 @@
 ﻿
 extern crate xorshift;
 
-use super::setting::{ModifierParameter,AdvanceTable};
+use super::setting::ModifierParameter;
 use serde::{Serialize,Deserialize};
 use std::cmp::min;
 use std::hash::Hash;

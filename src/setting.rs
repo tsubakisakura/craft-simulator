@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 #[derive(Debug,Clone)]
 pub struct Setting
 {
@@ -24,14 +26,14 @@ pub struct ApproximationTable
     pub required_process_accuracy : u32,  // 必要加工精度
 }
 
-#[derive(Debug,Clone)]
+#[derive(Clone)]
 pub struct ModifierParameter
 {
     pub max_working : u32,                // 必要工数
     pub max_quality : u32,                // 品質上限
     pub max_durability : u32,             // 初期耐久
     pub max_cp : u32,                     // 初期CP
-    pub advance_table : ApproximationTable,
+    pub advance_table : Arc<dyn AdvanceTable + Sync + Send>,
 }
 
 pub fn initial_setting() -> Setting {
@@ -55,11 +57,11 @@ impl ModifierParameter {
             max_quality : setting.max_quality,
             max_durability : setting.max_durability,
             max_cp : setting.max_cp,
-            advance_table : ApproximationTable {
+            advance_table : Arc::new( ApproximationTable {
                 work_accuracy : setting.work_accuracy,
                 process_accuracy : setting.process_accuracy,
                 required_process_accuracy : setting.required_process_accuracy,
-            }
+            })
         }
     }
 }

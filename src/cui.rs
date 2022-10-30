@@ -205,8 +205,6 @@ pub fn run_cui( param:CuiParameter ) {
     let mut modifier = Modifier { mod_param:param.mod_param.clone(), rng:SeedableRng::from_seed(&states[..]) };
     let mut state = State::new(&param.mod_param);
 
-    println!("{:?}", param.mod_param);
-
     while !state.is_terminated() {
         print_state(&state, &param.mod_param);
 
