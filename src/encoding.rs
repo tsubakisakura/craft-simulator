@@ -62,9 +62,11 @@ pub fn encode_state( s:&State, mod_param:&ModifierParameter ) -> StateVector {
         (s.condition == Condition::Standard).to_onehot(),
         (s.condition == Condition::HighQuality).to_onehot(),
         (s.condition == Condition::HighProgress).to_onehot(),
-        (s.condition == Condition::HighEfficiency).to_onehot(),
+        //第四次の場合はこちらを使うけれども非対応です
+        //(s.condition == Condition::HighEfficiency).to_onehot(),
         (s.condition == Condition::HighSustain).to_onehot(),
         (s.condition == Condition::Solid).to_onehot(),
+        (s.condition == Condition::Stable).to_onehot(),
     ]
 }
 
