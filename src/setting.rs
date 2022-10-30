@@ -136,8 +136,8 @@ impl ModifierParameter {
                 work_base : 209,
                 quality_base : table,
             }),
-            bonus_time_t : 0.05,
-            bonus_threshold_t : 0.80,
+            bonus_time_t : 0.15,
+            bonus_threshold_t : 0.50,
             bonus_threshold : 13500, // ウソウソの泉作成要件
         }
     }
