@@ -61,6 +61,10 @@ pub struct ModifierParameter
 }
 
 impl ModifierParameter {
+
+    // 作業精度2769
+    // 加工精度2840
+    // maxcp 569
     pub fn new_ishgard_reconstruction_4th() -> ModifierParameter {
         ModifierParameter {
             max_working : 12046,
@@ -68,9 +72,61 @@ impl ModifierParameter {
             max_durability : 55,
             max_cp : 569 + 72 + 16,
             advance_table : Arc::new( ApproximationTable {
-                work_base : 472, // work_accuracy == 2769
+                work_base : 472,
                 process_accuracy : 2840 + 70,
                 required_process_accuracy : 2540,
+            })
+        }
+    }
+
+    // 作業精度3738
+    // 加工精度3768
+    // maxcp 588
+    pub fn new_fountain_of_usouso() -> ModifierParameter {
+
+        // 横軸100,125,150,200,ビエルゴ
+        // 縦軸IQ(0～10)
+        let measured_value : [[u32;5];11] = [
+            [247,308,370,494,0],
+            [271,339,407,543,326],
+            [296,370,444,592,414],
+            [321,401,481,642,513],
+            [345,432,518,691,622],
+            [370,463,555,741,741],
+            [395,494,592,790,869],
+            [419,524,629,839,1007],
+            [444,555,666,889,1155],
+            [469,586,703,938,1314],
+            [494,617,741,988,1482],
+        ];
+
+        let mut table = HashMap::new();
+        for inner_quiet in 0..=10 {
+            for i in 0..5 {
+                if !(i == 4 && inner_quiet == 0) {
+                    let efficiency = match i {
+                        0 => 100,
+                        1 => 125,
+                        2 => 150,
+                        3 => 200,
+                        4 => 100 + inner_quiet * 20,
+                        _ => panic!("undefined"),
+                    };
+                    let key = QualityKey { inner_quiet, efficiency };
+
+                    table.entry( key ).or_insert( measured_value[inner_quiet as usize][i] );
+                }
+            }
+        }
+
+        ModifierParameter {
+            max_working : 7480,
+            max_quality : 13620,
+            max_durability : 60,
+            max_cp : 588 + 78 + 21,
+            advance_table : Arc::new( SimpleTable {
+                work_base : 209,
+                quality_base : table,
             })
         }
     }
