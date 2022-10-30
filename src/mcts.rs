@@ -127,7 +127,7 @@ pub fn get_reward(s:&State,mod_param:&ModifierParameter) -> f32 {
         let time_reward = lerp_clip(150.0,50.0,s.time as f32);
 
         // max品質ボーナス
-        let threshold_reward = if s.quality >= mod_param.max_quality { 1.0 } else { 0.0 };
+        let threshold_reward = if s.quality >= mod_param.bonus_threshold { 1.0 } else { 0.0 };
 
         // 品質ボーナス割合は計算で求めます
         let quality_t = 1.0 - mod_param.bonus_time_t - mod_param.bonus_threshold_t;
