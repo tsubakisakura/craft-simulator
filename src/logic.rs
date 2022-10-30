@@ -333,7 +333,7 @@ impl State {
     }
 
     fn add_working(&self, mod_param:&ModifierParameter, efficiency : u32) -> State {
-        let w = self.working + mod_param.advance_table.working_reward(efficiency, self.condition == Condition::HighProgress, self.veneration > 0, self.muscle_memory > 0);
+        let w = self.working + mod_param.advance_table.working_advance(efficiency, self.condition == Condition::HighProgress, self.veneration > 0, self.muscle_memory > 0);
 
         if w >= mod_param.max_working {
             if self.final_appraisal > 0 {
@@ -350,7 +350,7 @@ impl State {
 
     fn add_quality_base(&self, mod_param:&ModifierParameter, efficiency:u32) -> State {
         State {
-            quality: min(self.quality + mod_param.advance_table.quality_reward(efficiency, self.condition == Condition::HighQuality, self.innovation > 0, self.great_strides > 0, self.inner_quiet), mod_param.max_quality),
+            quality: min(self.quality + mod_param.advance_table.quality_advance(efficiency, self.condition == Condition::HighQuality, self.innovation > 0, self.great_strides > 0, self.inner_quiet), mod_param.max_quality),
             great_strides: 0,
             .. *self
         }

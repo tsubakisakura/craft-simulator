@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 pub trait AdvanceTable
 {
-    fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32;
-    fn quality_reward(&self, efficiency:u32, high_quality:bool, innovation:bool, grate_strides:bool, inner_quiet:u32) -> u32;
+    fn working_advance(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32;
+    fn quality_advance(&self, efficiency:u32, high_quality:bool, innovation:bool, grate_strides:bool, inner_quiet:u32) -> u32;
 }
 
 // イシュガルド第四次復興時に利用していたロジックです。
@@ -133,7 +133,7 @@ impl ModifierParameter {
 }
 
 impl AdvanceTable for ApproximationTable {
-    fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
+    fn working_advance(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
         let cond_rate = if high_progress { 1.5 } else { 1.0 };
         let buff_rate = 1.0 + if veneration { 0.5 } else { 0.0 } + if muscle_memory { 1.0 } else { 0.0 };
 
@@ -144,7 +144,7 @@ impl AdvanceTable for ApproximationTable {
     // こちらの記事が紹介しているcalculatorの内容を参考にしています。
     // https://jp.finalfantasyxiv.com/lodestone/character/29523439/blog/4641394/
     // 完全一致はしませんが、近似値として使えます。完全一致を求めるならば、データシートを作るほうが良いと思う
-    fn quality_reward(&self, efficiency: u32, high_quality: bool, innovation: bool, grate_strides: bool, inner_quiet: u32 ) -> u32 {
+    fn quality_advance(&self, efficiency: u32, high_quality: bool, innovation: bool, grate_strides: bool, inner_quiet: u32 ) -> u32 {
         let iq : f64 = From::from(inner_quiet);
         let process_accuracy : f64 = From::from(self.process_accuracy);
         let required_process_accuracy : f64 = From::from(self.required_process_accuracy);
@@ -161,14 +161,14 @@ impl AdvanceTable for ApproximationTable {
 }
 
 impl AdvanceTable for SimpleTable {
-    fn working_reward(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
+    fn working_advance(&self, efficiency:u32, high_progress:bool, veneration:bool, muscle_memory:bool) -> u32 {
         let cond_rate = if high_progress { 1.5 } else { 1.0 };
         let buff_rate = 1.0 + if veneration { 0.5 } else { 0.0 } + if muscle_memory { 1.0 } else { 0.0 };
 
         return ( self.work_base as f64 * cond_rate * efficiency as f64 * buff_rate ) as u32 / 100;
     }
 
-    fn quality_reward(&self, efficiency:u32, high_quality:bool, innovation:bool, grate_strides:bool, inner_quiet:u32) -> u32 {
+    fn quality_advance(&self, efficiency:u32, high_quality:bool, innovation:bool, grate_strides:bool, inner_quiet:u32) -> u32 {
         let q3 = *self.quality_base.get( &QualityKey { inner_quiet, efficiency } ).expect("undefined key") as f64;
         let cond_rate = if high_quality { 1.5 } else { 1.0 };
         let buff_rate = 1.0 + if grate_strides { 1.0 } else { 0.0 } + if innovation { 0.5 } else { 0.0 };
