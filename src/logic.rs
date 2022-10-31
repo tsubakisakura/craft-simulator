@@ -22,7 +22,7 @@ pub enum Condition
 
 pub const ACTION_NUM: usize = 32;
 
-#[derive(Debug,Clone,Serialize,Deserialize,PartialEq)]
+#[derive(Debug,Clone,Copy,Serialize,Deserialize,PartialEq,Eq,Hash)]
 pub enum Action {
     BasicSynthesis,     // 作業
     BasicTouch,         // 加工

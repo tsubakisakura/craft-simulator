@@ -1,4 +1,6 @@
 use std::io::{BufReader,Read};
+use std::collections::HashMap;
+use num::FromPrimitive;
 
 use bzip2::read::BzDecoder;
 
@@ -74,12 +76,52 @@ fn write_record( record: &Record ) {
     }
 }
 
+fn count_skill_histogram( counter: &mut HashMap<(Action,Condition),u32>, record: &Record ) {
+    for sample in &record.samples {
+        let key = (sample.action, sample.state.condition);
+        *counter.entry(key).or_insert(0) += 1;
+    }
+}
+
+fn write_skill_histogram( counter: &HashMap<(Action,Condition),u32> ) {
+
+    println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+        "",
+        Condition::Standard.translate_ja(),
+        Condition::HighQuality.translate_ja(),
+        Condition::HighProgress.translate_ja(),
+        Condition::HighEfficiency.translate_ja(),
+        Condition::HighSustain.translate_ja(),
+        Condition::Solid.translate_ja(),
+        Condition::Stable.translate_ja());
+
+    for a in 0..ACTION_NUM {
+        let action = Action::from_u64(a as u64).unwrap();
+
+        println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            action.translate_ja(),
+            counter.get(&(action,Condition::Standard)).unwrap_or(&0),
+            counter.get(&(action,Condition::HighQuality)).unwrap_or(&0),
+            counter.get(&(action,Condition::HighProgress)).unwrap_or(&0),
+            counter.get(&(action,Condition::HighEfficiency)).unwrap_or(&0),
+            counter.get(&(action,Condition::HighSustain)).unwrap_or(&0),
+            counter.get(&(action,Condition::Solid)).unwrap_or(&0),
+            counter.get(&(action,Condition::Stable)).unwrap_or(&0));
+    }
+}
+
 pub fn run_replay( record_names:Vec<String> ) {
+
+    let mut counter : HashMap<(Action,Condition),u32> = HashMap::new();
+
     for record_name in record_names {
         let records = get_records(record_name);
 
         for record in records {
             write_record( &record );
+            count_skill_histogram( &mut counter, &record );
         }
     }
+
+    write_skill_histogram( &counter );
 }
