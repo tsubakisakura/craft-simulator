@@ -85,7 +85,7 @@ fn count_skill_histogram( counter: &mut HashMap<(Action,Condition),u32>, record:
 
 fn write_skill_histogram( counter: &HashMap<(Action,Condition),u32> ) {
 
-    println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+    println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
         "",
         Condition::Standard.translate_ja(),
         Condition::HighQuality.translate_ja(),
@@ -98,7 +98,7 @@ fn write_skill_histogram( counter: &HashMap<(Action,Condition),u32> ) {
     for a in 0..ACTION_NUM {
         let action = Action::from_u64(a as u64).unwrap();
 
-        println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+        println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             action.translate_ja(),
             counter.get(&(action,Condition::Standard)).unwrap_or(&0),
             counter.get(&(action,Condition::HighQuality)).unwrap_or(&0),
