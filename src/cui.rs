@@ -79,7 +79,7 @@ impl Action {
             Action::IntensiveSynthesis => "集中作業",
             Action::AdvancedTouch => "上級加工",
             Action::HeartAndSoul => "一心不乱",
-            Action::PrudentSynthesis => "倹約加工",
+            Action::PrudentSynthesis => "倹約作業",
             Action::TrainedFinesse => "匠の神業",
         }
     }

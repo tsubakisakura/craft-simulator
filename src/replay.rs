@@ -86,7 +86,7 @@ fn count_skill_histogram( counter: &mut HashMap<(Action,Condition),u32>, record:
 fn write_skill_histogram( counter: &HashMap<(Action,Condition),u32> ) {
 
     println!("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-        "",
+        "アクション",
         Condition::Standard.translate_ja(),
         Condition::HighQuality.translate_ja(),
         Condition::HighProgress.translate_ja(),
